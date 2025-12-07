@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirPlay Instruments</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+    <canvas id="particles-canvas"></canvas>
+    
+    <!-- Geometric Shapes -->
+    <div class="geometric-shapes">
+        <div class="geo-shape geo-circle-1"></div>
+        <div class="geo-shape geo-circle-2"></div>
+        <div class="geo-shape geo-circle-3"></div>
+        <div class="geo-shape geo-triangle-1"></div>
+        <div class="geo-shape geo-triangle-2"></div>
+        <div class="geo-shape geo-hexagon-1"></div>
+        <div class="geo-shape geo-hexagon-2"></div>
+        <div class="geo-shape geo-square-1"></div>
+        <div class="geo-shape geo-square-2"></div>
+        <div class="geo-shape geo-pentagon-1"></div>
+        <div class="geo-shape geo-pentagon-2"></div>
+        <div class="geo-shape geo-octagon-1"></div>
+        <div class="geo-shape geo-diamond-1"></div>
+        <div class="geo-shape geo-diamond-2"></div>
+        <div class="geo-shape geo-line-1"></div>
+        <div class="geo-shape geo-line-2"></div>
+        <div class="geo-shape geo-line-3"></div>
+        <div class="geo-shape geo-line-4"></div>
+        <div class="geo-grid geo-grid-1"></div>
+        <div class="geo-grid geo-grid-2"></div>
+        <div class="geo-shape geo-spiral-1"></div>
+        <div class="geo-shape geo-spiral-2"></div>
+    </div>
+    
+    <!-- Landing Page -->
+    <div id="landing-page" class="page active">
+        <div class="landing-container scroll-container">
+            <!-- Section 1: Hero -->
+            <section class="scroll-section hero-section">
+            <div class="landing-hero">
+                <div class="hero-geometric-shapes">
+                    <div class="hero-shape hero-circle-1"></div>
+                    <div class="hero-shape hero-circle-2"></div>
+                    <div class="hero-shape hero-triangle-1"></div>
+                    <div class="hero-shape hero-triangle-2"></div>
+                    <div class="hero-shape hero-triangle-green-1"></div>
+                    <div class="hero-shape hero-triangle-green-2"></div>
+                    <div class="hero-shape hero-hexagon-1"></div>
+                    <div class="hero-shape hero-diamond-1"></div>
+                    <div class="hero-shape hero-diamond-cyan-1"></div>
+                    <div class="hero-shape hero-line-1"></div>
+                    <div class="hero-shape hero-line-2"></div>
+                    <div class="hero-shape hero-line-3"></div>
+                    <div class="hero-shape hero-line-green-1"></div>
+                    <div class="hero-shape hero-square-1"></div>
+                    <div class="hero-shape hero-square-yellow-1"></div>
+                </div>
+                <div class="logo-container">
+                    <div class="logo-animation">
+                        <div class="animated-line line-1"></div>
+                        <div class="animated-line line-2"></div>
+                        <div class="animated-line line-3"></div>
+                    </div>
+                    <h1 class="main-title">
+                        <span class="title-word">Air</span><span class="title-word highlight">Play</span>
+                        <br>
+                        <span class="title-word subtitle-text">Instruments</span>
+                    </h1>
+                </div>
+                <p class="hero-subtitle">Play music with your hands. No instruments needed.</p>
+                
+                <a href="instruments.html" class="get-started-btn">
+                    <span class="btn-text">Get Started</span>
+                    <span class="btn-arrow-icon">→</span>
+                </a>
+                
+                <!-- Camera Preview (hidden initially) -->
+                <div class="hero-camera-preview" id="hero-camera-preview">
+                    <div class="camera-preview-overlay">
+                        <div class="camera-status-text">Camera Ready</div>
+                        <video id="hero-camera-video" autoplay playsinline></video>
+                        <div class="camera-instruction">
+                            <p>Position yourself in the frame to begin</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Color Accent Section -->
+            <div class="color-accent-section">
+                <div class="accent-gradient-overlay"></div>
+                <div class="accent-shapes">
+                    <div class="accent-circle accent-circle-1"></div>
+                    <div class="accent-circle accent-circle-2"></div>
+                    <div class="accent-circle accent-circle-3"></div>
+                    <div class="accent-triangle accent-triangle-1"></div>
+                    <div class="accent-triangle accent-triangle-2"></div>
+                    <div class="accent-diamond accent-diamond-1"></div>
+                    <div class="accent-hexagon accent-hexagon-1"></div>
+                </div>
+                <div class="accent-content">
+                    <div class="accent-line accent-line-1"></div>
+                    <div class="accent-line accent-line-2"></div>
+                </div>
+            </div>
+            
+            <!-- Geometric Transition Section -->
+            <div class="geometric-transition">
+                <!-- Sharp Geometric Shapes -->
+                <div class="transition-shape sharp transition-triangle-sharp-1"></div>
+                <div class="transition-shape sharp transition-triangle-sharp-2"></div>
+                <div class="transition-shape sharp transition-triangle-sharp-3"></div>
+                <div class="transition-shape sharp transition-triangle-green-1"></div>
+                <div class="transition-shape sharp transition-triangle-green-2"></div>
+                <div class="transition-shape sharp transition-triangle-green-3"></div>
+                <div class="transition-shape sharp transition-diamond-sharp-1"></div>
+                <div class="transition-shape sharp transition-diamond-sharp-2"></div>
+                <div class="transition-shape sharp transition-square-sharp-1"></div>
+                <div class="transition-shape sharp transition-square-sharp-2"></div>
+                <div class="transition-shape sharp transition-hexagon-sharp-1"></div>
+                <div class="transition-shape sharp transition-hexagon-sharp-2"></div>
+                <div class="transition-shape sharp transition-line-sharp-1"></div>
+                <div class="transition-shape sharp transition-line-sharp-2"></div>
+                <div class="transition-shape sharp transition-line-sharp-3"></div>
+                <div class="transition-shape sharp transition-line-sharp-4"></div>
+                <div class="transition-shape sharp transition-line-sharp-5"></div>
+                <div class="transition-shape sharp transition-line-sharp-6"></div>
+                <div class="transition-shape sharp transition-line-green-1"></div>
+                <div class="transition-shape sharp transition-line-green-2"></div>
+                <div class="transition-shape sharp transition-diamond-cyan-1"></div>
+                <div class="transition-shape sharp transition-square-yellow-1"></div>
+                
+                <!-- Soft Geometric Shapes -->
+                <div class="transition-shape transition-circle-1"></div>
+                <div class="transition-shape transition-circle-2"></div>
+                <div class="transition-shape transition-triangle-1"></div>
+                <div class="transition-shape transition-triangle-2"></div>
+                <div class="transition-shape transition-hexagon-1"></div>
+                <div class="transition-shape transition-hexagon-2"></div>
+                <div class="transition-shape transition-diamond-1"></div>
+                <div class="transition-shape transition-diamond-2"></div>
+                <div class="transition-shape transition-square-1"></div>
+                <div class="transition-shape transition-square-2"></div>
+                <div class="transition-shape transition-line-1"></div>
+                <div class="transition-shape transition-line-2"></div>
+                <div class="transition-shape transition-line-3"></div>
+                <div class="transition-shape transition-line-4"></div>
+                <div class="transition-shape transition-pentagon-1"></div>
+                <div class="transition-shape transition-octagon-1"></div>
+                <div class="transition-grid transition-grid-1"></div>
+                <div class="transition-grid transition-grid-2"></div>
+            </div>
+            
+            </section>
+            
+            <!-- Section 2: Features -->
+            <section class="scroll-section features-section-wrapper">
+            <div class="importance-section">
+                <h2 class="importance-title">Accessible to Everyone</h2>
+                <div class="importance-visual">
+                    <div class="visual-aura aura-1"></div>
+                    <div class="visual-aura aura-2"></div>
+                    <div class="visual-aura aura-3"></div>
+                </div>
+            </div>
+            <div class="features-section">
+                <div class="features-visual-grid">
+                    <div class="feature-visual-card">
+                        <div class="feature-animation-large">
+                            <div class="feature-circle-large"></div>
+                            <div class="feature-pulse-large"></div>
+                            <div class="feature-aura-ring"></div>
+                        </div>
+                        <h4 class="feature-name">Camera Control</h4>
+                    </div>
+                    <div class="feature-visual-card">
+                        <div class="feature-animation-large">
+                            <div class="feature-circle-large"></div>
+                            <div class="feature-pulse-large"></div>
+                            <div class="feature-aura-ring"></div>
+                        </div>
+                        <h4 class="feature-name">Practice Mode</h4>
+                    </div>
+                    <div class="feature-visual-card">
+                        <div class="feature-animation-large">
+                            <div class="feature-circle-large"></div>
+                            <div class="feature-pulse-large"></div>
+                            <div class="feature-aura-ring"></div>
+                        </div>
+                        <h4 class="feature-name">Composer Mode</h4>
+                    </div>
+                    <div class="feature-visual-card">
+                        <div class="feature-animation-large">
+                            <div class="feature-circle-large"></div>
+                            <div class="feature-pulse-large"></div>
+                            <div class="feature-aura-ring"></div>
+                        </div>
+                        <h4 class="feature-name">Real-Time Stats</h4>
+                    </div>
+                </div>
+            </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Camera Setup Page -->
+    <div id="camera-setup" class="page">
+        <div class="camera-setup-container">
+            <div class="camera-setup-header">
+                <button class="back-btn" onclick="goBackToLanding()">
+                    <span class="back-arrow">←</span>
+                    <span>Back</span>
+                </button>
+                <h2 class="camera-setup-title" id="camera-instrument-name">Camera Setup</h2>
+            </div>
+            <div class="camera-embed-container">
+                <div class="camera-status-indicator" id="camera-status-indicator">
+                    <div class="status-dot"></div>
+                    <span>Initializing Camera...</span>
+                </div>
+                <div class="video-wrapper">
+                    <video id="setup-camera-video" autoplay playsinline muted></video>
+                    <div class="video-placeholder" id="video-placeholder">
+                        <div class="placeholder-content">
+                            <div class="placeholder-icon">📹</div>
+                            <div class="placeholder-text">Camera Feed</div>
+                            <div class="placeholder-subtext">Requesting camera access...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="camera-overlay-info">
+                    <div class="setup-instruction">
+                        <h3>Position yourself in the frame</h3>
+                        <p>Make sure your hands are visible for gesture detection</p>
+                    </div>
+                </div>
+            </div>
+            <div class="camera-setup-actions">
+                <button class="setup-action-btn" id="composer-mode-btn">
+                    <div class="action-btn-content">
+                        <div class="action-icon">🎼</div>
+                        <div class="action-label">Composer Mode</div>
+                        <div class="action-desc">Create without camera overlay</div>
+                    </div>
+                </button>
+                <button class="setup-action-btn primary" id="practice-mode-btn">
+                    <div class="action-btn-content">
+                        <div class="action-icon">🎯</div>
+                        <div class="action-label">Practice Mode</div>
+                        <div class="action-desc">Practice with camera feedback</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Practice Question Page -->
+    <div id="practice-question" class="page">
+        <div class="practice-question-container">
+            <div class="question-header">
+                <button class="back-btn" onclick="goBack()">
+                    <span class="back-arrow">←</span>
+                    <span>Back</span>
+                </button>
+            </div>
+            <div class="question-content">
+                <h2 class="question-title">Do you want to practice?</h2>
+                <p class="question-subtitle" id="question-instrument">Practice with camera feedback</p>
+                <div class="question-buttons">
+                    <button class="question-btn yes-btn" id="practice-yes-btn">
+                        <div class="question-btn-glow"></div>
+                        <div class="question-btn-content">
+                            <div class="question-btn-label">Yes</div>
+                            <div class="question-btn-desc">Start practicing</div>
+                        </div>
+                    </button>
+                    <button class="question-btn no-btn" id="practice-no-btn">
+                        <div class="question-btn-glow"></div>
+                        <div class="question-btn-content">
+                            <div class="question-btn-label">No</div>
+                            <div class="question-btn-desc">Stay on landing</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Piano Composer Page -->
+    <div id="piano-composer" class="page">
+        <div class="piano-container">
+            <div class="controls-bar">
+                <div class="controls-left">
+                    <button class="back-btn" onclick="goToLanding()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Back</span>
+                    </button>
+                    <div class="instrument-indicator">
+                        <div class="indicator-animation piano-indicator"></div>
+                        <span class="indicator-text">Piano - Composer Mode</span>
+                    </div>
+                </div>
+                <div class="controls-center">
+                    <div class="stats-display">
+                        <div class="stat-item">
+                            <span class="stat-label">Score</span>
+                            <span class="stat-value" id="piano-score">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Notes</span>
+                            <span class="stat-value" id="piano-notes-count">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="controls-right">
+                    <div class="tempo-control">
+                        <label class="tempo-label">Tempo</label>
+                        <input type="range" class="tempo-slider" id="piano-tempo" min="400" max="2000" value="800">
+                        <span class="tempo-value" id="piano-tempo-value">800ms</span>
+                    </div>
+                    <button class="play-btn" id="piano-play-btn">
+                        <span class="play-icon">▶</span>
+                        <span class="play-text">Play</span>
+                    </button>
+                </div>
+            </div>
+            <div class="piano-canvas-container" id="piano-canvas-container">
+                <div class="canvas-overlay">
+                    <div class="hit-indicator" id="piano-hit-indicator"></div>
+                </div>
+                <canvas id="piano-canvas"></canvas>
+            </div>
+            <div class="piano-keys" id="piano-keys"></div>
+        </div>
+    </div>
+
+    <!-- Piano Practice Page -->
+    <div id="piano-practice" class="page">
+        <div class="piano-container">
+            <div class="controls-bar">
+                <div class="controls-left">
+                    <button class="back-btn" onclick="goToLanding()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Back</span>
+                    </button>
+                    <div class="instrument-indicator">
+                        <div class="indicator-animation piano-indicator"></div>
+                        <span class="indicator-text">Piano - Practice Mode</span>
+                    </div>
+                </div>
+                <div class="controls-center">
+                    <div class="stats-display">
+                        <div class="stat-item">
+                            <span class="stat-label">Score</span>
+                            <span class="stat-value" id="piano-practice-score">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Accuracy</span>
+                            <span class="stat-value" id="piano-accuracy">0%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Combo</span>
+                            <span class="stat-value combo-highlight" id="piano-combo">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="controls-right">
+                    <div class="song-selector">
+                        <label class="song-label">Song</label>
+                        <select class="song-select" id="piano-practice-song-select">
+                            <option value="">Select a song...</option>
+                            <option value="twinkle">Twinkle Twinkle Little Star</option>
+                            <option value="happy">Happy Birthday</option>
+                            <option value="mary">Mary Had a Little Lamb</option>
+                            <option value="fur-elise">Für Elise (Excerpt)</option>
+                            <option value="scale">C Major Scale</option>
+                        </select>
+                    </div>
+                    <div class="tempo-control">
+                        <label class="tempo-label">Tempo</label>
+                        <input type="range" class="tempo-slider" id="piano-practice-tempo" min="400" max="2000" value="800">
+                        <span class="tempo-value" id="piano-practice-tempo-value">800ms</span>
+                    </div>
+                    <button class="play-btn" id="piano-practice-play-btn">
+                        <span class="play-icon">▶</span>
+                        <span class="play-text">Play</span>
+                    </button>
+                </div>
+            </div>
+            <div class="camera-container">
+                <div class="camera-status" id="piano-camera-status">
+                    <div class="status-dot"></div>
+                    <span>Camera Active</span>
+                </div>
+                <video id="piano-video" autoplay playsinline></video>
+                <div class="canvas-overlay">
+                    <canvas id="piano-practice-canvas"></canvas>
+                    <div class="hit-indicator" id="piano-practice-hit-indicator"></div>
+                </div>
+            </div>
+            <div class="piano-keys" id="piano-practice-keys"></div>
+        </div>
+    </div>
+
+    <!-- Drums Composer Page -->
+    <div id="drums-composer" class="page">
+        <div class="drums-container">
+            <div class="controls-bar">
+                <div class="controls-left">
+                    <button class="back-btn" onclick="goToLanding()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Back</span>
+                    </button>
+                    <div class="instrument-indicator">
+                        <div class="indicator-animation drums-indicator"></div>
+                        <span class="indicator-text">Drums - Composer Mode</span>
+                    </div>
+                </div>
+                <div class="controls-center">
+                    <div class="stats-display">
+                        <div class="stat-item">
+                            <span class="stat-label">Score</span>
+                            <span class="stat-value" id="drums-score">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Beats</span>
+                            <span class="stat-value" id="drums-beats">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="controls-right">
+                    <div class="tempo-control">
+                        <label class="tempo-label">Tempo</label>
+                        <input type="range" class="tempo-slider" id="drums-tempo" min="500" max="2500" value="1000">
+                        <span class="tempo-value" id="drums-tempo-value">1000ms</span>
+                    </div>
+                    <button class="play-btn" id="drums-play-btn">
+                        <span class="play-icon">▶</span>
+                        <span class="play-text">Play</span>
+                    </button>
+                </div>
+            </div>
+            <div class="drums-content">
+                <div class="partition-panel">
+                    <div class="partition-header">
+                        <div class="partition-icon-animation"></div>
+                        <span>Partition</span>
+                    </div>
+                    <div class="partition-view" id="drums-partition">
+                        <div class="partition-empty">
+                            <div class="empty-animation">
+                                <div class="note-line"></div>
+                                <div class="note-line"></div>
+                                <div class="note-line"></div>
+                            </div>
+                            <p>Notes will appear here</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="drums-canvas-container">
+                    <canvas id="drums-canvas"></canvas>
+                </div>
+            </div>
+            <div class="drum-pads" id="drum-pads-composer">
+                <div class="drum-pad bass1-drum" data-drum="bass1">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Bass 1</div>
+                    <div class="drum-key-hint">B1</div>
+                </div>
+                <div class="drum-pad bass2-drum" data-drum="bass2">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Bass 2</div>
+                    <div class="drum-key-hint">B2</div>
+                </div>
+                <div class="drum-pad snare-drum" data-drum="snare">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Snare</div>
+                    <div class="drum-key-hint">S</div>
+                </div>
+                <div class="drum-pad cymbal" data-drum="cymbal">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Cymbal</div>
+                    <div class="drum-key-hint">C</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drums Practice Page -->
+    <div id="drums-practice" class="page">
+        <div class="drums-container">
+            <div class="controls-bar">
+                <div class="controls-left">
+                    <button class="back-btn" onclick="goToLanding()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Back</span>
+                    </button>
+                    <div class="instrument-indicator">
+                        <div class="indicator-animation drums-indicator"></div>
+                        <span class="indicator-text">Drums - Practice Mode</span>
+                    </div>
+                </div>
+                <div class="controls-center">
+                    <div class="stats-display">
+                        <div class="stat-item">
+                            <span class="stat-label">Score</span>
+                            <span class="stat-value" id="drums-practice-score">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Accuracy</span>
+                            <span class="stat-value" id="drums-accuracy">0%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Combo</span>
+                            <span class="stat-value combo-highlight" id="drums-combo">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="controls-right">
+                    <div class="tempo-control">
+                        <label class="tempo-label">Tempo</label>
+                        <input type="range" class="tempo-slider" id="drums-practice-tempo" min="500" max="2500" value="1000">
+                        <span class="tempo-value" id="drums-practice-tempo-value">1000ms</span>
+                    </div>
+                    <button class="play-btn" id="drums-practice-play-btn">
+                        <span class="play-icon">▶</span>
+                        <span class="play-text">Play</span>
+                    </button>
+                </div>
+            </div>
+            <div class="drums-content">
+                <div class="partition-panel">
+                    <div class="partition-header">
+                        <div class="partition-icon-animation"></div>
+                        <span>Partition</span>
+                    </div>
+                    <div class="partition-view" id="drums-partition-practice">
+                        <div class="partition-empty">
+                            <div class="empty-animation">
+                                <div class="note-line"></div>
+                                <div class="note-line"></div>
+                                <div class="note-line"></div>
+                            </div>
+                            <p>Notes will appear here</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="camera-container">
+                    <div class="camera-status" id="drums-camera-status">
+                        <div class="status-dot"></div>
+                        <span>Camera Active</span>
+                    </div>
+                    <video id="drums-video" autoplay playsinline></video>
+                    <div class="canvas-overlay">
+                        <canvas id="drums-practice-canvas"></canvas>
+                        <div class="hit-indicator" id="drums-hit-indicator"></div>
+                        <!-- Drums Visualization Overlay -->
+                        <div class="drums-visual-overlay">
+                            <div class="drum-visual bass1-visual" data-drum="bass1">
+                                <div class="drum-visual-inner"></div>
+                            </div>
+                            <div class="drum-visual bass2-visual" data-drum="bass2">
+                                <div class="drum-visual-inner"></div>
+                            </div>
+                            <div class="drum-visual snare-visual" data-drum="snare">
+                                <div class="drum-visual-inner"></div>
+                            </div>
+                            <div class="drum-visual cymbal-visual" data-drum="cymbal">
+                                <div class="drum-visual-inner"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="drum-pads" id="drum-pads-practice">
+                <div class="drum-pad bass1-drum" data-drum="bass1">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Bass 1</div>
+                    <div class="drum-key-hint">B1</div>
+                </div>
+                <div class="drum-pad bass2-drum" data-drum="bass2">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Bass 2</div>
+                    <div class="drum-key-hint">B2</div>
+                </div>
+                <div class="drum-pad snare-drum" data-drum="snare">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Snare</div>
+                    <div class="drum-key-hint">S</div>
+                </div>
+                <div class="drum-pad cymbal" data-drum="cymbal">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Cymbal</div>
+                    <div class="drum-key-hint">C</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cursor Trail Canvas -->
+    <canvas id="cursor-trail"></canvas>
+    
+    <script src="app.js"></script>
+    
+    <!-- Apple-style Scroll Transitions -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const scrollContainer = document.querySelector('.scroll-container');
+        const heroSection = document.querySelector('.hero-section');
+        const featuresSection = document.querySelector('.features-section-wrapper');
+        
+        if (!scrollContainer || !heroSection || !featuresSection) return;
+        
+        let ticking = false;
+        
+        function handleScroll() {
+            const scrollTop = scrollContainer.scrollTop;
+            const windowHeight = window.innerHeight;
+            const scrollProgress = Math.min(scrollTop / (windowHeight * 0.6), 1);
+            
+            // Fade out hero section as we scroll
+            const heroContent = heroSection.querySelector('.landing-hero');
+            if (heroContent) {
+                const opacity = 1 - (scrollProgress * 1.8);
+                const scale = 1 - (scrollProgress * 0.08);
+                const translateY = scrollProgress * -80;
+                const blur = scrollProgress * 10;
+                
+                heroContent.style.opacity = Math.max(0, opacity);
+                heroContent.style.transform = `scale(${Math.max(0.92, scale)}) translateY(${translateY}px)`;
+                heroContent.style.filter = `blur(${blur}px)`;
+            }
+            
+            // Handle geometric transition and other decorative elements
+            const geoTransition = heroSection.querySelector('.geometric-transition');
+            const colorAccent = heroSection.querySelector('.color-accent-section');
+            
+            if (geoTransition) {
+                const transitionOpacity = 1 - (scrollProgress * 2.5);
+                geoTransition.style.opacity = Math.max(0, transitionOpacity);
+            }
+            
+            if (colorAccent) {
+                const accentOpacity = 1 - (scrollProgress * 2);
+                colorAccent.style.opacity = Math.max(0, accentOpacity);
+            }
+            
+            // Add class for CSS transitions on hero
+            if (scrollProgress > 0.2) {
+                heroSection.classList.add('scrolling-out');
+            } else {
+                heroSection.classList.remove('scrolling-out');
+            }
+            
+            // Show features section when scrolled enough
+            if (scrollProgress > 0.4) {
+                featuresSection.classList.add('visible');
+            } else {
+                featuresSection.classList.remove('visible');
+            }
+            
+            ticking = false;
+        }
+        
+        scrollContainer.addEventListener('scroll', function() {
+            if (!ticking) {
+                requestAnimationFrame(handleScroll);
+                ticking = true;
+            }
+        });
+        
+        // Initial call
+        handleScroll();
+        
+        // Make features visible initially if already scrolled
+        setTimeout(() => {
+            handleScroll();
+        }, 100);
+    });
+    </script>
+</body>
+</html>

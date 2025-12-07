@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drums - Player Mode - AirPlay</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        .ar-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .ar-frame {
+            width: 100%;
+            height: 70vh;
+            border: 2px solid rgba(255, 107, 107, 0.3);
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .mode-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .mode-title {
+            color: #ff6b6b;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 20px;
+            color: #ff6b6b;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #ff6b6b;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+
+    <!-- Header -->
+    <div class="mode-header">
+        <a href="drums.html" class="back-btn">
+            <span class="back-arrow">←</span>
+            <span>Back</span>
+        </a>
+        <div class="mode-title">🥁 Drums - Player Mode</div>
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            <span>AR Active</span>
+        </div>
+    </div>
+
+    <!-- AR Camera Container -->
+    <div class="ar-container">
+        <iframe src="http://localhost:8501/?mode=drums&embed=true" class="ar-frame" frameborder="0"
+            allow="camera; microphone"></iframe>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

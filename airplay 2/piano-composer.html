@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piano - Composer Mode - AirPlay</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        .ar-studio-container {
+            width: 100%;
+            max-width: 100%;
+            height: calc(100vh - 80px);
+            padding: 0;
+        }
+
+        .ar-studio-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 0;
+        }
+
+        .controls-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .page.active {
+            padding-top: 80px;
+        }
+
+        /* Sensitivity slider styling */
+        #sensitivity-slider {
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        #sensitivity-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #00ff88;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+        }
+
+        #sensitivity-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #00ff88;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+        }
+
+        #sensitivity-slider::-webkit-slider-runnable-track {
+            height: 6px;
+            background: linear-gradient(90deg, rgba(0, 255, 136, 0.3) 0%, rgba(0, 255, 136, 0.8) 100%);
+            border-radius: 3px;
+        }
+
+        #sensitivity-slider::-moz-range-track {
+            height: 6px;
+            background: linear-gradient(90deg, rgba(0, 255, 136, 0.3) 0%, rgba(0, 255, 136, 0.8) 100%);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+
+    <!-- Piano Composer Page -->
+    <div id="piano-composer" class="page active">
+        <div class="controls-bar">
+            <div class="controls-left">
+                <a href="piano.html" class="back-btn">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    <span>Back</span>
+                </a>
+                <div class="instrument-indicator">
+                    <div class="indicator-animation piano-indicator"></div>
+                    <span class="indicator-text">Piano - Composer Mode</span>
+                </div>
+            </div>
+            <div class="controls-center">
+                <div class="stats-display">
+                    <div class="stat-item">
+                        <span class="stat-label">Status</span>
+                        <span class="stat-value" style="color: #00ff88;">AR Active</span>
+                    </div>
+                </div>
+            </div>
+            <div class="controls-right">
+                <div class="status-badge"
+                    style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.3); border-radius: 20px; color: #00ff88;">
+                    <div
+                        style="width: 8px; height: 8px; background: #00ff88; border-radius: 50%; animation: pulse 2s infinite;">
+                    </div>
+                    <span>Camera Active</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Embedded Streamlit AR Studio -->
+        <div class="ar-studio-container">
+            <iframe id="ar-studio-embed" src="http://localhost:8501/?mode=piano&embed=true" class="ar-studio-frame"
+                allow="camera; microphone"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Pulse animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.5; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Sensitivity slider control
+        const sensitivitySlider = document.getElementById('sensitivity-slider');
+        const sensitivityValue = document.getElementById('sensitivity-value');
+        const arStudioFrame = document.getElementById('ar-studio-embed');
+
+        // Update display value
+        sensitivitySlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            sensitivityValue.textContent = value.toFixed(2);
+        });
+
+        // Update iframe URL when slider changes (with debounce)
+        let updateTimeout;
+        sensitivitySlider.addEventListener('change', (e) => {
+            const value = parseFloat(e.target.value);
+            clearTimeout(updateTimeout);
+
+            // Update iframe URL with new threshold parameter
+            updateTimeout = setTimeout(() => {
+                const currentUrl = new URL(arStudioFrame.src);
+                currentUrl.searchParams.set('threshold', value);
+                arStudioFrame.src = currentUrl.toString();
+                console.log(`[DEBUG] Updated sensitivity threshold to: ${value}`);
+            }, 300); // 300ms debounce
+        });
+    </script>
+</body>
+
+</html>

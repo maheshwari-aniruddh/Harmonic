@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drums - AirPlay</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Geometric Shapes -->
+    <div class="geometric-shapes">
+        <div class="geo-shape geo-circle-1"></div>
+        <div class="geo-shape geo-circle-2"></div>
+        <div class="geo-shape geo-circle-3"></div>
+        <div class="geo-shape geo-triangle-1"></div>
+        <div class="geo-shape geo-triangle-2"></div>
+        <div class="geo-shape geo-hexagon-1"></div>
+        <div class="geo-shape geo-hexagon-2"></div>
+    </div>
+
+    <!-- Drums Mode Selection Page -->
+    <div id="drums-mode-page" class="page active">
+        <div class="landing-container">
+            <div class="instruments-header">
+                <a href="instruments.html" class="back-btn">
+                    <span class="back-arrow">←</span>
+                    <span>Back</span>
+                </a>
+            </div>
+
+            <div class="instrument-selector-wrapper">
+                <h2 class="selector-title">Drums</h2>
+                <p style="color: rgba(255,255,255,0.6); text-align: center; margin-bottom: 2rem;">Choose your mode</p>
+
+                <div class="instrument-selector">
+                    <a href="drums-player.html" class="instrument-btn drums-btn">
+                        <div class="btn-glow"></div>
+                        <div class="btn-border"></div>
+                        <div class="btn-content">
+                            <div class="btn-animation">
+                                <div class="drums-visual">
+                                    <div class="drum-circle drum-1"></div>
+                                    <div class="drum-circle drum-2"></div>
+                                    <div class="drum-circle drum-3"></div>
+                                    <div class="drum-circle drum-4"></div>
+                                </div>
+                            </div>
+                            <div class="btn-label">Player Mode</div>
+                            <div class="btn-desc">Play with AR camera tracking</div>
+                            <div class="btn-arrow">→</div>
+                        </div>
+                    </a>
+                    <a href="drums-composer.html" class="instrument-btn drums-btn">
+                        <div class="btn-glow"></div>
+                        <div class="btn-border"></div>
+                        <div class="btn-content">
+                            <div class="btn-animation">
+                                <div class="drums-visual">
+                                    <div class="drum-circle drum-1"></div>
+                                    <div class="drum-circle drum-2"></div>
+                                    <div class="drum-circle drum-3"></div>
+                                    <div class="drum-circle drum-4"></div>
+                                </div>
+                            </div>
+                            <div class="btn-label">Composer Mode</div>
+                            <div class="btn-desc">Create beats with clicks</div>
+                            <div class="btn-arrow">→</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="landing-footer">
+                <div class="feature-badge">
+                    <span class="badge-dot"></span>
+                    <span>4 drum zones</span>
+                </div>
+                <div class="feature-badge">
+                    <span class="badge-dot"></span>
+                    <span>Multi-finger detection</span>
+                </div>
+                <div class="feature-badge">
+                    <span class="badge-dot"></span>
+                    <span>Real drum sounds</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cursor Trail Canvas -->
+    <canvas id="cursor-trail"></canvas>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piano - Player Mode - AirPlay</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        .ar-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .ar-frame {
+            width: 100%;
+            height: 70vh;
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .mode-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .mode-title {
+            color: #00ff88;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 20px;
+            color: #00ff88;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Song Controls */
+        .song-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            max-width: 1200px;
+            margin: 0 auto 10px auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+        }
+
+        .song-select {
+            padding: 10px 16px;
+            font-size: 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            cursor: pointer;
+            min-width: 220px;
+        }
+
+        .song-select:focus {
+            outline: none;
+            border-color: #00ff88;
+        }
+
+        .start-btn {
+            padding: 10px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            background: #00ff88;
+            color: #000;
+            transition: all 0.2s;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .instructions {
+            color: #888;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+
+    <!-- Header -->
+    <div class="mode-header">
+        <a href="piano.html" class="back-btn">
+            <span class="back-arrow">←</span>
+            <span>Back</span>
+        </a>
+        <div class="mode-title">🎹 Piano - Player Mode</div>
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            <span>AR Active</span>
+        </div>
+    </div>
+
+    <!-- Song Controls -->
+    <div class="song-controls">
+        <select id="songSelect" class="song-select">
+            <option value="twinkle">Twinkle Twinkle Little Star</option>
+            <option value="mary">Mary Had a Little Lamb</option>
+            <option value="hot_cross_buns">Hot Cross Buns</option>
+            <option value="row_row_row">Row Row Row Your Boat</option>
+            <option value="happy_birthday">Happy Birthday</option>
+        </select>
+        <button id="startBtn" class="start-btn">▶ Start Song</button>
+        <div style="display: flex; align-items: center; gap: 8px; margin-left: 10px;">
+            <label style="color: #888; font-size: 0.85rem;">Sensitivity:</label>
+            <input type="range" id="sensitivitySlider" min="0.1" max="1.0" step="0.05" value="0.5"
+                style="width: 100px; accent-color: #00ff88;">
+            <span id="sensitivityValue" style="color: #00ff88; font-size: 0.85rem; min-width: 35px;">0.50</span>
+        </div>
+    </div>
+
+    <!-- AR Camera Container -->
+    <div class="ar-container">
+        <iframe id="arFrame" src="http://localhost:8501/?mode=piano_player&song=twinkle&threshold=0.5&embed=true"
+            class="ar-frame" frameborder="0" allow="camera; microphone"></iframe>
+    </div>
+
+    <script>
+        const songSelect = document.getElementById('songSelect');
+        const startBtn = document.getElementById('startBtn');
+        const arFrame = document.getElementById('arFrame');
+        const sensitivitySlider = document.getElementById('sensitivitySlider');
+        const sensitivityValue = document.getElementById('sensitivityValue');
+
+        function updateIframeSrc() {
+            const song = songSelect.value;
+            const threshold = sensitivitySlider.value;
+            arFrame.src = `http://localhost:8501/?mode=piano_player&song=${song}&threshold=${threshold}&embed=true`;
+        }
+
+        startBtn.addEventListener('click', updateIframeSrc);
+        songSelect.addEventListener('change', updateIframeSrc);
+        
+        sensitivitySlider.addEventListener('input', () => {
+            sensitivityValue.textContent = parseFloat(sensitivitySlider.value).toFixed(2);
+        });
+    </script>
+</body>
+
+</html>
