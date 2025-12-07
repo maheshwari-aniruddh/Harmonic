@@ -21,7 +21,7 @@
 
         .ar-frame {
             width: 100%;
-            height: 70vh;
+            height: 65vh;
             border: 2px solid rgba(255, 107, 107, 0.3);
             border-radius: 16px;
             background: rgba(0, 0, 0, 0.5);
@@ -73,6 +73,49 @@
                 opacity: 0.5;
             }
         }
+
+        .pattern-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+        }
+
+        .pattern-select {
+            padding: 10px 15px;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            min-width: 200px;
+        }
+
+        .pattern-select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .start-btn {
+            padding: 10px 25px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.4);
+        }
     </style>
 </head>
 
@@ -93,11 +136,36 @@
         </div>
     </div>
 
+    <!-- Pattern Controls -->
+    <div class="pattern-controls">
+        <select id="patternSelect" class="pattern-select">
+            <option value="drums_basic_rock">Basic Rock Beat (4/4)</option>
+            <option value="drums_we_will_rock_you">We Will Rock You</option>
+            <option value="drums_seven_nation">Seven Nation Army</option>
+            <option value="drums_fill_roll">Drum Fill Roll</option>
+        </select>
+        <button id="startBtn" class="start-btn">▶ Start Pattern</button>
+    </div>
+
     <!-- AR Camera Container -->
     <div class="ar-container">
-        <iframe src="http://localhost:8501/?mode=drums&embed=true" class="ar-frame" frameborder="0"
-            allow="camera; microphone"></iframe>
+        <iframe id="arFrame" src="http://localhost:8501/?mode=drums_player&song=drums_basic_rock&embed=true"
+            class="ar-frame" frameborder="0" allow="camera; microphone"></iframe>
     </div>
+
+    <script>
+        const patternSelect = document.getElementById('patternSelect');
+        const startBtn = document.getElementById('startBtn');
+        const arFrame = document.getElementById('arFrame');
+
+        function updateFrame() {
+            const pattern = patternSelect.value;
+            arFrame.src = `http://localhost:8501/?mode=drums_player&song=${pattern}&embed=true`;
+        }
+
+        patternSelect.addEventListener('change', updateFrame);
+        startBtn.addEventListener('click', updateFrame);
+    </script>
 
     <script src="app.js"></script>
 </body>

@@ -111,6 +111,73 @@ class MusicRecorder:
             except:
                 return None
     
+    def export_txt(self, mode="piano"):
+        """Export recorded notes as TXT file (note sequence)"""
+        if not self.recorded_notes:
+            print("[RECORDER] ⚠️ No notes to export as TXT!")
+            return None
+        
+        # Create output directory
+        os.makedirs(self.output_dir, exist_ok=True)
+        
+        # Generate filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{self.output_dir}/my_recording_{timestamp}.txt"
+        
+        # Extract just the note letters (C, D, E, F, G, A, B for piano, or drum names)
+        notes = []
+        for note_name, _ in self.recorded_notes:
+            # Clean up note name
+            base = note_name.replace('_high', '').replace('_low', '').replace('s', '')
+            if mode == "piano":
+                # Convert c1, d1, etc. to C, D, etc.
+                note_letter = base[0].upper() if base else ''
+                if note_letter in 'CDEFGAB':
+                    notes.append(note_letter)
+            else:
+                # Drums - keep as is (SNARE, HAT, KICK, TOM)
+                notes.append(note_name.upper())
+        
+        # Write to file with spaces
+        try:
+            with open(filename, 'w') as f:
+                f.write(' '.join(notes))
+            print(f"[RECORDER] ✅ Exported TXT to: {filename}")
+            return filename
+        except Exception as e:
+            print(f"[RECORDER] ❌ TXT export failed: {e}")
+            return None
+    
+    @staticmethod
+    def list_recordings():
+        """List all saved TXT recordings"""
+        recordings = []
+        recordings_dir = "recordings"
+        if os.path.exists(recordings_dir):
+            for f in os.listdir(recordings_dir):
+                if f.endswith('.txt') and f.startswith('my_recording_'):
+                    filepath = os.path.join(recordings_dir, f)
+                    mtime = os.path.getmtime(filepath)
+                    recordings.append({
+                        'filename': f,
+                        'filepath': filepath,
+                        'timestamp': datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M')
+                    })
+        # Sort by timestamp descending
+        recordings.sort(key=lambda x: x['timestamp'], reverse=True)
+        return recordings
+    
+    @staticmethod
+    def load_recording(filepath):
+        """Load a recording TXT file and return the notes"""
+        try:
+            with open(filepath, 'r') as f:
+                content = f.read()
+                notes = [n.upper() for n in content.split() if n.strip()]
+                return notes
+        except:
+            return []
+    
     def _get_note_samples(self, audio_engine, note_name):
         """Get sample data for a note from audio engine"""
         # Try to load the original WAV file for this note
@@ -524,9 +591,11 @@ embed_mode = url_mode is not None or query_params.get("embed", "false") == "true
 
 # Player mode - for guided song playback
 player_mode = url_mode == "piano_player"
+drums_player_mode = url_mode == "drums_player"
 current_song = []
 current_note_index = 0
 expected_note = None
+expected_drum = None
 
 # Note to finger mapping (note letter -> (handedness, finger_name))
 NOTE_TO_FINGER = {
@@ -539,7 +608,15 @@ NOTE_TO_FINGER = {
     'B': ('Right', 'Index'),
 }
 
-# Load song if in player mode
+# Drum pattern character to zone mapping
+DRUM_CHAR_TO_ZONE = {
+    'K': 'KICK',
+    'S': 'SNARE',
+    'T': 'TOM',
+    'H': 'HAT',
+}
+
+# Load song if in piano player mode
 if player_mode:
     song_name = query_params.get("song", "twinkle")
     song_path = f"music_files/{song_name}.txt"
@@ -569,6 +646,38 @@ if player_mode:
     
     # Song is active only after countdown and when there are notes left
     song_active = (not countdown_active) and (current_note_index < len(current_song))
+
+# Load drum pattern if in drums player mode
+elif drums_player_mode:
+    song_name = query_params.get("song", "drums_basic_rock")
+    song_path = f"music_files/{song_name}.txt"
+    try:
+        with open(song_path, 'r') as f:
+            song_text = f.read()
+            # Parse drum patterns: K=KICK, S=SNARE, T=TOM, skip rests (-)
+            drum_chars = [c.upper() for c in song_text.split() if c.strip() and c.upper() in DRUM_CHAR_TO_ZONE]
+            current_song = [DRUM_CHAR_TO_ZONE[c] for c in drum_chars]
+            print(f"[DRUMS PLAYER] Loaded pattern '{song_name}': {len(current_song)} hits")
+    except:
+        print(f"[DRUMS PLAYER] Failed to load pattern: {song_path}")
+        current_song = ['KICK', 'SNARE', 'KICK', 'SNARE']  # Default pattern
+    
+    if 'player_note_index' not in st.session_state:
+        st.session_state.player_note_index = 0
+    
+    # Initialize countdown timer
+    if 'countdown_start' not in st.session_state:
+        st.session_state.countdown_start = time.time()
+    
+    # Calculate countdown
+    elapsed = time.time() - st.session_state.countdown_start
+    countdown_remaining = 3 - int(elapsed)
+    countdown_active = countdown_remaining > 0
+    
+    current_note_index = st.session_state.player_note_index
+    expected_drum = current_song[current_note_index] if current_note_index < len(current_song) else None
+    
+    song_active = (not countdown_active) and (current_note_index < len(current_song))
 else:
     song_active = True  # Normal mode always plays sounds
     countdown_active = False
@@ -589,7 +698,7 @@ if url_mode == "piano" or url_mode == "piano_player":
     else:
         velocity_threshold = 0.5
         print(f"[EMBED] Piano mode from URL, threshold: 0.5 (default)")
-elif url_mode == "drums":
+elif url_mode == "drums" or url_mode == "drums_player":
     mode = "Air Drums (4-Zone)"
     # Get threshold from URL or default to 0.15
     url_threshold = query_params.get("threshold", None)
@@ -938,6 +1047,62 @@ if run:
             # KICK - bottom-right corner (quarter oval curving up-left)
             cv2.ellipse(annotated_image, (w, h), (rx, ry), 0, 180, 270, DARK_PURPLE, 3)
             cv2.putText(annotated_image, "kick", (w - rx//3 - 20, h - ry//2 + 10), cv2.FONT_HERSHEY_SIMPLEX, 1, DARK_PURPLE, 2)
+            
+            # ========== DRUMS PLAYER MODE: Highlight expected zone ==========
+            if drums_player_mode:
+                # Update countdown dynamically
+                elapsed = time.time() - st.session_state.countdown_start
+                countdown_remaining = max(0, 3 - int(elapsed))
+                countdown_active = countdown_remaining > 0
+                song_active = (not countdown_active) and (st.session_state.player_note_index < len(current_song))
+                
+                note_idx = st.session_state.get('player_note_index', 0)
+                total_notes = len(current_song)
+                expected_drum = current_song[note_idx] if note_idx < total_notes else None
+                
+                # Highlight the expected drum zone with green glow
+                if expected_drum and not countdown_active:
+                    GREEN_GLOW = (0, 255, 0)
+                    thick = 8
+                    if expected_drum == 'SNARE':
+                        cv2.ellipse(annotated_image, (0, 0), (rx, ry), 0, 0, 90, GREEN_GLOW, thick)
+                        cv2.putText(annotated_image, "HIT!", (rx//4, ry//2 - 30), cv2.FONT_HERSHEY_SIMPLEX, 1.2, GREEN_GLOW, 3)
+                    elif expected_drum == 'HAT':
+                        cv2.ellipse(annotated_image, (w, 0), (rx, ry), 0, 90, 180, GREEN_GLOW, thick)
+                        cv2.putText(annotated_image, "HIT!", (w - rx//3 - 30, ry//2 - 30), cv2.FONT_HERSHEY_SIMPLEX, 1.2, GREEN_GLOW, 3)
+                    elif expected_drum == 'TOM':
+                        cv2.ellipse(annotated_image, (0, h), (rx, ry), 0, 270, 360, GREEN_GLOW, thick)
+                        cv2.putText(annotated_image, "HIT!", (rx//4, h - ry//2 - 20), cv2.FONT_HERSHEY_SIMPLEX, 1.2, GREEN_GLOW, 3)
+                    elif expected_drum == 'KICK':
+                        cv2.ellipse(annotated_image, (w, h), (rx, ry), 0, 180, 270, GREEN_GLOW, thick)
+                        cv2.putText(annotated_image, "HIT!", (w - rx//3 - 30, h - ry//2 - 20), cv2.FONT_HERSHEY_SIMPLEX, 1.2, GREEN_GLOW, 3)
+                
+                # Show countdown
+                if countdown_active and countdown_remaining > 0:
+                    cv2.rectangle(annotated_image, (w//2 - 100, h//2 - 100), (w//2 + 100, h//2 + 100), (0, 0, 0), -1)
+                    cv2.rectangle(annotated_image, (w//2 - 100, h//2 - 100), (w//2 + 100, h//2 + 100), (0, 255, 0), 4)
+                    cv2.putText(annotated_image, str(countdown_remaining), (w//2 - 30, h//2 + 30), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 4, (0, 255, 0), 8)
+                    cv2.putText(annotated_image, "GET READY!", (w//2 - 100, h//2 - 120), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                elif note_idx < total_notes:
+                    # Progress display
+                    cv2.rectangle(annotated_image, (w//2 - 120, 10), (w//2 + 120, 100), (0, 0, 0), -1)
+                    cv2.rectangle(annotated_image, (w//2 - 120, 10), (w//2 + 120, 100), (0, 255, 0), 2)
+                    cv2.putText(annotated_image, f"Hit: {expected_drum}", (w//2 - 80, 55), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 1.1, (0, 255, 0), 3)
+                    progress = note_idx / total_notes
+                    bar_width = 200
+                    cv2.rectangle(annotated_image, (w//2 - 100, 70), (w//2 - 100 + bar_width, 85), (50, 50, 50), -1)
+                    cv2.rectangle(annotated_image, (w//2 - 100, 70), (w//2 - 100 + int(bar_width * progress), 85), (0, 255, 0), -1)
+                    cv2.putText(annotated_image, f"{note_idx + 1}/{total_notes}", (w//2 - 25, 95), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                else:
+                    # Pattern complete
+                    cv2.rectangle(annotated_image, (w//2 - 180, 20), (w//2 + 180, 90), (0, 100, 0), -1)
+                    cv2.rectangle(annotated_image, (w//2 - 180, 20), (w//2 + 180, 90), (0, 255, 0), 3)
+                    cv2.putText(annotated_image, "PATTERN COMPLETE!", (w//2 - 175, 70), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 3)
 
         # Initialize drum finger positions (before hand detection)
         all_drum_finger_positions = []
@@ -1178,13 +1343,43 @@ if run:
             entered_pads = physics.update_drum_zones(all_drum_finger_positions, pads)
             
             for pad in entered_pads:
-                # DRUM HIT! Play sound and flash (NO octave modifier for drums)
-                print(f"DRUM HIT: {pad['name']}")
-                audio.play(pad['name'], "")  # Explicitly no octave modifier
-                # Record the drum hit if recording is active
-                if 'recorder' in st.session_state and st.session_state.recorder.is_recording:
-                    st.session_state.recorder.record_note(pad['name'], "")
-                status_log.write(f"🥁 {pad['name']} hit")
+                # DRUM HIT! 
+                drum_name = pad['name']
+                print(f"DRUM HIT: {drum_name}")
+                
+                # Check if in drums_player mode
+                if drums_player_mode:
+                    # Get current expected drum
+                    note_idx = st.session_state.get('player_note_index', 0)
+                    expected = current_song[note_idx] if note_idx < len(current_song) else None
+                    
+                    # Check if song is active (after countdown)
+                    elapsed = time.time() - st.session_state.countdown_start
+                    is_song_active = elapsed >= 3 and note_idx < len(current_song)
+                    
+                    if is_song_active:
+                        is_correct = (drum_name.upper() == expected)
+                        
+                        # Always play the sound (feedback)
+                        audio.play(drum_name, "")
+                        
+                        if is_correct:
+                            # Correct! Advance to next drum
+                            st.session_state.player_note_index += 1
+                            print(f"[DRUMS PLAYER] ✓ Correct! Next index: {st.session_state.player_note_index}")
+                        else:
+                            # Wrong drum - show visual feedback
+                            cv2.putText(annotated_image, "WRONG!", (w//2 - 80, h//2), 
+                                       cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 4)
+                            print(f"[DRUMS PLAYER] ✗ Wrong! Expected {expected}, got {drum_name}")
+                else:
+                    # Normal mode - just play sound
+                    audio.play(drum_name, "")
+                    # Record the drum hit if recording is active
+                    if 'recorder' in st.session_state and st.session_state.recorder.is_recording:
+                        st.session_state.recorder.record_note(drum_name, "")
+                
+                status_log.write(f"🥁 {drum_name} hit")
                 
                 # Visual Flash - filled quarter oval at corner
                 rx_flash = int(w * 0.45)
