@@ -820,13 +820,11 @@ if embed_mode:
         if recorder.is_recording:
             st.markdown("🔴 **Recording...**")
         elif st.session_state.last_recording_file:
-            # Provide download button
             try:
                 with open(st.session_state.last_recording_file, 'rb') as f:
-                    # Detect file type for correct MIME
                     mime = "audio/mpeg" if st.session_state.last_recording_file.endswith('.mp3') else "audio/wav"
                     st.download_button(
-                        "⬇️ Download",
+                        "⬇️ Download MP3",
                         f,
                         file_name=os.path.basename(st.session_state.last_recording_file),
                         mime=mime,
@@ -839,6 +837,24 @@ if embed_mode:
         if recorder.is_recording:
             note_count = len(recorder.recorded_notes)
             st.markdown(f"📝 **{note_count}** notes")
+        elif st.session_state.last_recording_file and not recorder.is_recording:
+            if st.button("💾 Save as Song", use_container_width=True):
+                rec_mode = "drums" if url_mode and "drums" in url_mode else "piano"
+                txt_file = recorder.export_txt(mode=rec_mode)
+                if txt_file:
+                    st.session_state.last_txt_file = txt_file
+                st.rerun()
+    
+    with rec_cols[3]:
+        recordings = MusicRecorder.list_recordings()
+        if recordings:
+            options = ["-- My Recordings --"] + [r['filename'].replace('my_recording_', '').replace('.txt', '') for r in recordings]
+            selected = st.selectbox("📚", options, label_visibility="collapsed")
+            if selected != "-- My Recordings --":
+                for r in recordings:
+                    if selected in r['filename']:
+                        st.session_state.selected_recording = r['filepath']
+                        break
 
 # Layout - Full width camera for better visibility
 frame_placeholder = st.image([])
