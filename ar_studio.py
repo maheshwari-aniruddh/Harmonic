@@ -219,6 +219,56 @@ class MusicRecorder:
                 print(f"[RECORDER] Failed to load {path}: {e}")
         return None
 
+# --- VISUAL METRONOME (No Sound) ---
+class Metronome:
+    """Visual-only metronome at 100 BPM"""
+    def __init__(self, bpm=100):
+        self.bpm = bpm
+        self.beat_interval = 60.0 / bpm  # ~0.6 seconds at 100 BPM
+        self.flash_duration = 0.1  # How long the beat flash lasts
+        self.start_time = time.time()
+        self.last_beat_time = 0
+    
+    def update(self, frame):
+        """Draw metronome indicator on frame. Returns the modified frame."""
+        h, w = frame.shape[:2]
+        current_time = time.time()
+        
+        # Calculate time since start
+        elapsed = current_time - self.start_time
+        
+        # Which beat are we on?
+        beat_number = int(elapsed / self.beat_interval)
+        time_in_beat = elapsed % self.beat_interval
+        
+        # Are we in the flash window (first 0.1 seconds of beat)?
+        is_on_beat = time_in_beat < self.flash_duration
+        
+        # Draw circle at top-center
+        center_x = w // 2
+        center_y = 30
+        
+        if is_on_beat:
+            # On Beat: White, larger
+            radius = 20
+            color = (255, 255, 255)  # White
+            thickness = -1  # Filled
+            # Add glow effect
+            cv2.circle(frame, (center_x, center_y), radius + 8, (100, 100, 100), 2)
+        else:
+            # Off Beat: Gray, normal
+            radius = 15
+            color = (100, 100, 100)  # Gray
+            thickness = -1  # Filled
+        
+        cv2.circle(frame, (center_x, center_y), radius, color, thickness)
+        
+        return frame
+    
+    def reset(self):
+        """Reset metronome timing"""
+        self.start_time = time.time()
+
 # --- AUDIO ENGINE (Using simpleaudio - no pygame) ---
 class AudioEngine:
     def __init__(self):
@@ -877,6 +927,11 @@ if run:
         audio = st.session_state.audio
         print(f"Reloaded sounds: {list(audio.sounds.keys())}")
     
+    # Initialize metronome (visual only, no sound)
+    if 'metronome' not in st.session_state:
+        st.session_state.metronome = Metronome(bpm=100)
+    metronome = st.session_state.metronome
+    
     if 'physics' not in st.session_state:
         st.session_state.physics = HandPhysics()
         
@@ -1410,6 +1465,9 @@ if run:
                 elif corner == 'bottom-right':
                     cv2.ellipse(annotated_image, (w, h), (rx_flash, ry_flash), 0, 180, 270, DARK_PURPLE, -1)
 
+        # ========== VISUAL METRONOME (draw on top) ==========
+        annotated_image = metronome.update(annotated_image)
+        
         frame_placeholder.image(annotated_image, channels="BGR", width=1000)
 
     cap.release()
