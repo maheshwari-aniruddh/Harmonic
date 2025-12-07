@@ -145,11 +145,17 @@
             <option value="drums_fill_roll">Drum Fill Roll</option>
         </select>
         <button id="startBtn" class="start-btn">▶ Start Pattern</button>
+        <div style="display: flex; align-items: center; gap: 8px; margin-left: 20px;">
+            <label style="color: #888; font-size: 0.85rem;">⏱️ BPM:</label>
+            <input type="range" id="bpmSlider" min="60" max="180" step="10" value="100"
+                style="width: 80px; accent-color: #ffaa00;">
+            <span id="bpmValue" style="color: #ffaa00; font-size: 0.85rem; min-width: 35px;">100</span>
+        </div>
     </div>
 
     <!-- AR Camera Container -->
     <div class="ar-container">
-        <iframe id="arFrame" src="http://localhost:8501/?mode=drums_player&song=drums_basic_rock&embed=true"
+        <iframe id="arFrame" src="http://localhost:8501/?mode=drums_player&song=drums_basic_rock&bpm=100&embed=true"
             class="ar-frame" frameborder="0" allow="camera; microphone"></iframe>
     </div>
 
@@ -157,14 +163,21 @@
         const patternSelect = document.getElementById('patternSelect');
         const startBtn = document.getElementById('startBtn');
         const arFrame = document.getElementById('arFrame');
+        const bpmSlider = document.getElementById('bpmSlider');
+        const bpmValue = document.getElementById('bpmValue');
 
         function updateFrame() {
             const pattern = patternSelect.value;
-            arFrame.src = `http://localhost:8501/?mode=drums_player&song=${pattern}&embed=true`;
+            const bpm = bpmSlider.value;
+            arFrame.src = `http://localhost:8501/?mode=drums_player&song=${pattern}&bpm=${bpm}&embed=true`;
         }
 
         patternSelect.addEventListener('change', updateFrame);
         startBtn.addEventListener('click', updateFrame);
+
+        bpmSlider.addEventListener('input', () => {
+            bpmValue.textContent = bpmSlider.value;
+        });
     </script>
 
     <script src="app.js"></script>

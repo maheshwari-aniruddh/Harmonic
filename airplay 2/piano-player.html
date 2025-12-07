@@ -160,11 +160,18 @@
                 style="width: 100px; accent-color: #00ff88;">
             <span id="sensitivityValue" style="color: #00ff88; font-size: 0.85rem; min-width: 35px;">0.50</span>
         </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-left: 20px;">
+            <label style="color: #888; font-size: 0.85rem;">⏱️ BPM:</label>
+            <input type="range" id="bpmSlider" min="60" max="180" step="10" value="100"
+                style="width: 80px; accent-color: #ffaa00;">
+            <span id="bpmValue" style="color: #ffaa00; font-size: 0.85rem; min-width: 35px;">100</span>
+        </div>
     </div>
 
     <!-- AR Camera Container -->
     <div class="ar-container">
-        <iframe id="arFrame" src="http://localhost:8501/?mode=piano_player&song=twinkle&threshold=0.5&embed=true"
+        <iframe id="arFrame"
+            src="http://localhost:8501/?mode=piano_player&song=twinkle&threshold=0.5&bpm=100&embed=true"
             class="ar-frame" frameborder="0" allow="camera; microphone"></iframe>
     </div>
 
@@ -174,11 +181,14 @@
         const arFrame = document.getElementById('arFrame');
         const sensitivitySlider = document.getElementById('sensitivitySlider');
         const sensitivityValue = document.getElementById('sensitivityValue');
+        const bpmSlider = document.getElementById('bpmSlider');
+        const bpmValue = document.getElementById('bpmValue');
 
         function updateIframeSrc() {
             const song = songSelect.value;
             const threshold = sensitivitySlider.value;
-            arFrame.src = `http://localhost:8501/?mode=piano_player&song=${song}&threshold=${threshold}&embed=true`;
+            const bpm = bpmSlider.value;
+            arFrame.src = `http://localhost:8501/?mode=piano_player&song=${song}&threshold=${threshold}&bpm=${bpm}&embed=true`;
         }
 
         startBtn.addEventListener('click', updateIframeSrc);
@@ -186,6 +196,10 @@
 
         sensitivitySlider.addEventListener('input', () => {
             sensitivityValue.textContent = parseFloat(sensitivitySlider.value).toFixed(2);
+        });
+
+        bpmSlider.addEventListener('input', () => {
+            bpmValue.textContent = bpmSlider.value;
         });
     </script>
 </body>

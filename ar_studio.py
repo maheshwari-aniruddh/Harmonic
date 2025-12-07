@@ -244,8 +244,8 @@ class Metronome:
         # Are we in the flash window (first 0.1 seconds of beat)?
         is_on_beat = time_in_beat < self.flash_duration
         
-        # Draw circle at top-center
-        center_x = w // 2
+        # Draw circle at top-right
+        center_x = w - 40
         center_y = 30
         
         if is_on_beat:
@@ -928,8 +928,19 @@ if run:
         print(f"Reloaded sounds: {list(audio.sounds.keys())}")
     
     # Initialize metronome (visual only, no sound)
-    if 'metronome' not in st.session_state:
-        st.session_state.metronome = Metronome(bpm=100)
+    # Read BPM from URL (default 100)
+    url_bpm = query_params.get("bpm", "100")
+    try:
+        bpm_value = int(url_bpm)
+        bpm_value = max(60, min(180, bpm_value))  # Clamp to 60-180
+    except:
+        bpm_value = 100
+    
+    # Reinitialize if BPM changed
+    if 'metronome' not in st.session_state or st.session_state.get('metronome_bpm') != bpm_value:
+        st.session_state.metronome = Metronome(bpm=bpm_value)
+        st.session_state.metronome_bpm = bpm_value
+        print(f"[METRONOME] Initialized at {bpm_value} BPM")
     metronome = st.session_state.metronome
     
     if 'physics' not in st.session_state:
