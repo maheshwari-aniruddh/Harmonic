@@ -150,6 +150,7 @@
             <option value="hot_cross_buns">Hot Cross Buns</option>
             <option value="row_row_row">Row Row Row Your Boat</option>
             <option value="happy_birthday">Happy Birthday</option>
+            <option value="believer_intro">Believer (Intro)</option>
         </select>
         <button id="startBtn" class="start-btn">▶ Start Song</button>
         <div style="display: flex; align-items: center; gap: 8px; margin-left: 10px;">
@@ -181,7 +182,7 @@
 
         startBtn.addEventListener('click', updateIframeSrc);
         songSelect.addEventListener('change', updateIframeSrc);
-        
+
         sensitivitySlider.addEventListener('input', () => {
             sensitivityValue.textContent = parseFloat(sensitivitySlider.value).toFixed(2);
         });
