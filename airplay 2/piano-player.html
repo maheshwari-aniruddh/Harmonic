@@ -14,9 +14,13 @@
     <style>
         .ar-container {
             width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
+            max-width: 100vw;
+            margin: 0;
             padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            /* Space out the camera and PDF viewer */
+            gap: 20px;
         }
 
         .ar-frame {
@@ -143,15 +147,16 @@
     </div>
 
     <!-- Song Controls -->
-    <div class="song-controls">
+    <div class="song-controls" style="flex-wrap: wrap;">
         <select id="songSelect" class="song-select">
+            <option value="">-- Select a Song --</option>
             <option value="twinkle">Twinkle Twinkle Little Star</option>
             <option value="mary">Mary Had a Little Lamb</option>
             <option value="hot_cross_buns">Hot Cross Buns</option>
             <option value="row_row_row">Row Row Row Your Boat</option>
             <option value="happy_birthday">Happy Birthday</option>
             <option value="believer_intro">Believer (Intro)</option>
-            <option value="shape_of_you">Shape of You</option>
+            <option value="shape-of-you">Shape of You</option>
         </select>
         <button id="startBtn" class="start-btn">▶ Start Song</button>
         <div style="display: flex; align-items: center; gap: 8px; margin-left: 10px;">
@@ -161,46 +166,717 @@
             <span id="sensitivityValue" style="color: #00ff88; font-size: 0.85rem; min-width: 35px;">0.50</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; margin-left: 20px;">
-            <label style="color: #888; font-size: 0.85rem;">⏱️ BPM:</label>
+            <label style="color: #888; font-size: 0.85rem;">BPM:</label>
             <input type="range" id="bpmSlider" min="60" max="180" step="10" value="100"
                 style="width: 80px; accent-color: #ffaa00;">
             <span id="bpmValue" style="color: #ffaa00; font-size: 0.85rem; min-width: 35px;">100</span>
         </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+            <button id="midiUploadBtn"
+                style="padding:8px 16px;border-radius:8px;border:1px solid rgba(0,255,136,0.3);background:rgba(0,0,0,0.5);color:#00ff88;cursor:pointer;font-size:0.85rem;">Upload
+                MIDI</button>
+            <input type="file" id="midiFileInput" accept=".mid,.midi" style="display:none;">
+            <span id="midiStatus"
+                style="color:#888;font-size:0.8rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+        </div>
     </div>
 
-    <!-- AR Camera Container -->
+    <!-- Track picker modal (hidden by default) -->
+    <div id="trackPickerOverlay"
+        style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+        <div
+            style="background:#1a1a2e;border:1px solid rgba(0,255,136,0.3);border-radius:16px;padding:24px;max-width:520px;width:90%;max-height:70vh;overflow-y:auto;">
+            <h3 style="color:#00ff88;margin:0 0 16px;">Select Track to Practice</h3>
+            <div id="trackList" style="display:flex;flex-direction:column;gap:8px;"></div>
+            <div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;">
+                <button id="trackPickerCancel"
+                    style="padding:8px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#fff;cursor:pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container Content (Camera + PDF) -->
     <div class="ar-container">
-        <iframe id="arFrame"
-            src="http://localhost:8501/?mode=piano_player&song=twinkle&threshold=0.5&bpm=100&embed=true"
-            class="ar-frame" frameborder="0" allow="camera; microphone"></iframe>
+        <!-- Camera Container -->
+        <div
+            style="position:relative;width:64%;height:70vh;border:2px solid rgba(0,255,136,0.3);border-radius:16px;overflow:hidden;background:rgba(0,0,0,0.5);">
+            <video id="playerVideo" autoplay playsinline
+                style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
+            <canvas id="playerCanvas"
+                style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
+        </div>
+
+        <!-- PDF Viewer Container -->
+        <div id="pdfContainer"
+            style="position:relative;width:34%;height:70vh;border:2px solid rgba(255,170,0,0.3);border-radius:16px;overflow:hidden;background:rgba(0,0,0,0.5);display:flex;flex-direction:column;align-items:center;padding:10px;">
+            <div style="display:flex;flex-direction:column;gap:8px;width:100%;margin-bottom:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+                    <span style="color:#ffaa00;font-weight:600;font-size:1.1rem;">Sheet Music</span>
+                    <label for="pdfUploadInput"
+                        style="padding:6px 14px;border-radius:8px;background:#ffaa00;color:#000;font-weight:600;cursor:pointer;font-size:0.8rem;white-space:nowrap;">
+                        Upload PDF
+                    </label>
+                    <input type="file" id="pdfUploadInput" accept=".pdf" style="display:none;">
+                </div>
+                <select id="pdfSelect"
+                    style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,170,0,0.3);background:rgba(0,0,0,0.5);color:#fff;font-size:0.85rem;cursor:pointer;">
+                    <option value="">-- Select Sheet Music --</option>
+                    <option value="pdfs/Twinkle Twinkle Little Star Level 1 easy.pdf">Twinkle Twinkle Little Star
+                    </option>
+                    <option value="pdfs/Hot Cross Buns.pdf">Hot Cross Buns</option>
+                    <option value="pdfs/mary had a little lamb with letters.pdf">Mary Had a Little Lamb</option>
+                </select>
+            </div>
+
+            <div id="pdfPlaceholder"
+                style="flex:1;display:flex;align-items:center;justify-content:center;color:#888;text-align:center;width:100%;">
+                <p>Select sheet music above<br />or upload your own PDF.</p>
+            </div>
+            <iframe id="pdfViewer" style="display:none;width:100%;flex:1;border:none;border-radius:8px;background:#fff;"
+                title="PDF Viewer"></iframe>
+        </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/hands.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.min.js"
+        crossorigin="anonymous"></script>
     <script>
-        const songSelect = document.getElementById('songSelect');
-        const startBtn = document.getElementById('startBtn');
-        const arFrame = document.getElementById('arFrame');
-        const sensitivitySlider = document.getElementById('sensitivitySlider');
-        const sensitivityValue = document.getElementById('sensitivityValue');
-        const bpmSlider = document.getElementById('bpmSlider');
-        const bpmValue = document.getElementById('bpmValue');
+        (function () {
+            const API = 'http://localhost:8766';
+            const songSelect = document.getElementById('songSelect');
+            const startBtn = document.getElementById('startBtn');
+            const sensitivitySlider = document.getElementById('sensitivitySlider');
+            const sensitivityValue = document.getElementById('sensitivityValue');
+            const bpmSlider = document.getElementById('bpmSlider');
+            const bpmValue = document.getElementById('bpmValue');
+            const videoEl = document.getElementById('playerVideo');
+            const canvasEl = document.getElementById('playerCanvas');
+            const ctx = canvasEl.getContext('2d');
+            const midiUploadBtn = document.getElementById('midiUploadBtn');
+            const midiFileInput = document.getElementById('midiFileInput');
+            const midiStatus = document.getElementById('midiStatus');
+            const trackPickerOverlay = document.getElementById('trackPickerOverlay');
+            const trackList = document.getElementById('trackList');
+            const trackPickerCancel = document.getElementById('trackPickerCancel');
+            const pdfUploadInput = document.getElementById('pdfUploadInput');
+            const pdfViewer = document.getElementById('pdfViewer');
+            const pdfPlaceholder = document.getElementById('pdfPlaceholder');
+            const pdfSelect = document.getElementById('pdfSelect');
 
-        function updateIframeSrc() {
-            const song = songSelect.value;
-            const threshold = sensitivitySlider.value;
-            const bpm = bpmSlider.value;
-            arFrame.src = `http://localhost:8501/?mode=piano_player&song=${song}&threshold=${threshold}&bpm=${bpm}&embed=true`;
-        }
+            // Helper to show a PDF in the viewer
+            function showPdf(url) {
+                pdfViewer.src = url;
+                pdfViewer.style.display = 'block';
+                pdfPlaceholder.style.display = 'none';
+            }
 
-        startBtn.addEventListener('click', updateIframeSrc);
-        songSelect.addEventListener('change', updateIframeSrc);
+            // Dropdown selection handler
+            pdfSelect.addEventListener('change', () => {
+                const val = pdfSelect.value;
+                if (val) {
+                    showPdf(val);
+                }
+            });
 
-        sensitivitySlider.addEventListener('input', () => {
-            sensitivityValue.textContent = parseFloat(sensitivitySlider.value).toFixed(2);
-        });
+            // Handling local PDF uploads
+            pdfUploadInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file && file.type === 'application/pdf') {
+                    const objectUrl = URL.createObjectURL(file);
+                    showPdf(objectUrl);
+                    pdfSelect.value = ''; // Reset dropdown since custom file is loaded
+                }
+            });
 
-        bpmSlider.addEventListener('input', () => {
-            bpmValue.textContent = bpmSlider.value;
-        });
+            sensitivitySlider.addEventListener('input', () => {
+                sensitivityValue.textContent = parseFloat(sensitivitySlider.value).toFixed(2);
+            });
+            bpmSlider.addEventListener('input', () => {
+                bpmValue.textContent = bpmSlider.value;
+            });
+
+            /* ── Audio ── */
+            const PIANO_NOTES = [];
+            for (let oct = 3; oct <= 6; oct++) {
+                ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'].forEach(n => {
+                    PIANO_NOTES.push(n + oct);
+                });
+            }
+            const NOTE_FREQ = {};
+            PIANO_NOTES.forEach(n => {
+                const m = n.match(/^([A-G]#?)(\d+)$/);
+                if (!m) return;
+                const semi = { 'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5, 'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11 };
+                const midi = (parseInt(m[2]) + 1) * 12 + (semi[m[1]] || 0);
+                NOTE_FREQ[n] = 440 * Math.pow(2, (midi - 69) / 12);
+            });
+
+            let audioCtx = null, masterGain = null;
+            function initAudio() {
+                if (audioCtx) return;
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioCtx.createGain();
+                masterGain.gain.value = 0.5;
+                masterGain.connect(audioCtx.destination);
+            }
+            // `speed` multiplier controls octave pitching (2x = +1 octave, 0.5x = -1 octave)
+            function playNote(note, vel, speed = 1.0) {
+                initAudio();
+                const freq = NOTE_FREQ[note]; if (!freq) return;
+                const t = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq * speed, t);
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(Math.min(vel, 1) * 0.4, t + 0.01);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+                osc.connect(g); g.connect(masterGain);
+                osc.start(t); osc.stop(t + 0.8);
+            }
+
+            /* ── Song State ── */
+            let songNotes = [];
+            let songPlaying = false;
+            let songStartTime = 0;
+            let currentNoteIdx = 0;
+            let score = { hit: 0, miss: 0, total: 0 };
+            let hitFlashes = [];  // { x, y, t, note }
+
+            // Fingertip landmark indices
+            const FINGERTIPS = [4, 8, 12, 16, 20];
+            const FINGER_NAMES = ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'];
+            let lastHandResults = null;
+
+            // Note-to-finger mapping (matches ar_studio.py)
+            // Maps note letter -> { hand: 'Left'|'Right', finger: 'Thumb'|'Index'|... }
+            const NOTE_TO_FINGER = {
+                'C': { hand: 'Left', finger: 'Pinky', tipIdx: 20 },
+                'D': { hand: 'Left', finger: 'Ring', tipIdx: 16 },
+                'E': { hand: 'Left', finger: 'Middle', tipIdx: 12 },
+                'F': { hand: 'Left', finger: 'Index', tipIdx: 8 },
+                'G': { hand: 'Left', finger: 'Thumb', tipIdx: 4 },
+                'A': { hand: 'Right', finger: 'Thumb', tipIdx: 4 },
+                'B': { hand: 'Right', finger: 'Index', tipIdx: 8 },
+            };
+
+            // Reverse mapping for struck checks
+            const FINGER_TO_NOTE = {
+                'Left_20': 'C',
+                'Left_16': 'D',
+                'Left_12': 'E',
+                'Left_8': 'F',
+                'Left_4': 'G',
+                'Right_4': 'A',
+                'Right_8': 'B'
+            };
+
+            // Octave zone labels (using Dotted styles and Speed text)
+            const OCTAVE_ZONES = [
+                { label: 'TOP (2x SPEED / HIGHER PITCH)', color: 'rgba(255, 0, 255, 0.05)', border: 'rgba(255, 0, 255, 0.3)' },
+                { label: 'MIDDLE (1x SPEED / NORMAL PITCH)', color: 'rgba(0, 255, 136, 0.05)', border: 'rgba(0, 255, 136, 0.3)' },
+                { label: 'BOTTOM (0.5x SPEED / LOWER PITCH)', color: 'rgba(255, 170, 0, 0.05)', border: 'rgba(255, 170, 0, 0.3)' },
+            ];
+
+            function noteToZoneIndex(noteStr) {
+                const idx = PIANO_NOTES.indexOf(noteStr);
+                if (idx >= 0) return idx;
+                const m = noteStr.match(/^([A-G]#?)(\d+)$/i);
+                if (!m) return -1;
+                const target = m[1] + m[2];
+                for (let i = 0; i < PIANO_NOTES.length; i++) {
+                    if (PIANO_NOTES[i] === target) return i;
+                }
+                const semi = { 'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5, 'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11 };
+                const midiNum = (parseInt(m[2]) + 1) * 12 + (semi[m[1]] || 0);
+                const firstMidi = 48; // C3
+                return Math.max(0, Math.min(PIANO_NOTES.length - 1, midiNum - firstMidi));
+            }
+
+            function startSong() {
+                if (!songNotes.length) return;
+                initAudio();
+                songPlaying = true;
+                songStartTime = performance.now();
+                currentNoteIdx = 0;
+                score = { hit: 0, miss: 0, total: songNotes.length };
+                hitFlashes = [];
+                startBtn.textContent = '⏹ Stop';
+            }
+
+            function stopSong() {
+                songPlaying = false;
+                currentNoteIdx = 0;
+                hitFlashes = [];
+                startBtn.textContent = '▶ Start Song';
+            }
+
+            /* ── Canvas sizing ── */
+            function resizeCanvas() {
+                const r = canvasEl.parentElement.getBoundingClientRect();
+                canvasEl.width = r.width;
+                canvasEl.height = r.height;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            setTimeout(resizeCanvas, 200);
+
+            /* ── Draw hand landmarks + green fingertip highlights + octave zones ── */
+            function drawFrame() {
+                requestAnimationFrame(drawFrame);
+                const cw = canvasEl.width, ch = canvasEl.height;
+                if (!cw || !ch) return;
+                ctx.clearRect(0, 0, cw, ch);
+
+                // ========== SPEEDS / OCTAVE ZONES (3 dotted bands) ==========
+                const zoneH = ch / 3;
+                for (let z = 0; z < 3; z++) {
+                    const oz = OCTAVE_ZONES[z];
+                    ctx.fillStyle = oz.color;
+                    ctx.fillRect(0, z * zoneH, cw, zoneH);
+
+                    // Dotted divider line
+                    if (z < 2) {
+                        ctx.strokeStyle = oz.border;
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([5, 10]); // Make it dotted
+                        ctx.beginPath();
+                        ctx.moveTo(0, (z + 1) * zoneH);
+                        ctx.lineTo(cw, (z + 1) * zoneH);
+                        ctx.stroke();
+                        ctx.setLineDash([]); // Reset
+                    }
+
+                    // Zone label
+                    ctx.fillStyle = oz.border;
+                    ctx.font = 'bold 12px JetBrains Mono, monospace';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(oz.label, 8, z * zoneH + 20);
+                }
+
+                // Current target note (what to play next)
+                let targetNote = null;
+                let targetNoteLetter = null;
+                let targetFingerInfo = null;
+                if (songPlaying && currentNoteIdx < songNotes.length) {
+                    const elapsed = (performance.now() - songStartTime) / 1000;
+                    // Wait for the user to hit the note, don't auto-advance or count as miss.
+                    if (currentNoteIdx < songNotes.length) {
+                        const sn = songNotes[currentNoteIdx];
+                        if (sn) {
+                            targetNote = sn.note;
+                            // Strip numbers and convert sharps/flats (e.g. F# -> F) to closest playable finger 
+                            targetNoteLetter = sn.note.replace(/[\d]/g, '').toUpperCase();
+                            if (targetNoteLetter.includes('#') || targetNoteLetter.includes('B')) {
+                                targetNoteLetter = targetNoteLetter[0]; // Naive fallback: F# plays as F
+                            }
+                            targetFingerInfo = NOTE_TO_FINGER[targetNoteLetter] || null;
+                        }
+                    }
+                }
+
+                // ========== EXPECTED NOTE & FINGER INFO DISPLAY ==========
+                if (targetNote && targetFingerInfo) {
+                    const pulse = 0.5 + 0.3 * Math.sin(performance.now() / 150);
+                    // Show expected note + finger at top center
+                    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                    const infoW = 300, infoH = 50;
+                    ctx.fillRect(cw / 2 - infoW / 2, 4, infoW, infoH);
+                    ctx.strokeStyle = 'rgba(0,255,136,' + (pulse * 0.8) + ')';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(cw / 2 - infoW / 2, 4, infoW, infoH);
+
+                    ctx.fillStyle = '#00ff88';
+                    ctx.font = 'bold 20px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Play: ' + targetNote, cw / 2, 30);
+
+                    ctx.fillStyle = 'rgba(0,255,136,0.7)';
+                    ctx.font = '13px Inter, sans-serif';
+                    ctx.fillText(targetFingerInfo.hand + ' ' + targetFingerInfo.finger, cw / 2, 48);
+                }
+
+                // Draw hand landmarks
+                if (lastHandResults && lastHandResults.multiHandLandmarks) {
+                    for (let h = 0; h < lastHandResults.multiHandLandmarks.length; h++) {
+                        const lm = lastHandResults.multiHandLandmarks[h];
+                        // SelfieMode automatically maps label to Physical Hand
+                        const mpLabel = results_cache_handedness[h] || 'Right';
+                        const userHand = mpLabel;
+
+                        // Draw connections (skeleton)
+                        const connections = [
+                            [0, 1], [1, 2], [2, 3], [3, 4],
+                            [0, 5], [5, 6], [6, 7], [7, 8],
+                            [0, 9], [9, 10], [10, 11], [11, 12],
+                            [0, 13], [13, 14], [14, 15], [15, 16],
+                            [0, 17], [17, 18], [18, 19], [19, 20],
+                            [5, 9], [9, 13], [13, 17]
+                        ];
+                        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+                        ctx.lineWidth = 1.5;
+                        connections.forEach(([a, b]) => {
+                            const ax = lm[a].x * cw, ay = lm[a].y * ch;
+                            const bx = lm[b].x * cw, by = lm[b].y * ch;
+                            ctx.beginPath();
+                            ctx.moveTo(ax, ay);
+                            ctx.lineTo(bx, by);
+                            ctx.stroke();
+                        });
+
+                        // Draw all landmarks as small dots
+                        for (let i = 0; i < lm.length; i++) {
+                            const px = lm[i].x * cw;
+                            const py = lm[i].y * ch;
+                            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                            ctx.beginPath();
+                            ctx.arc(px, py, 3, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+
+                        // Draw fingertips — highlight the EXPECTED finger
+                        FINGERTIPS.forEach((fi, idx) => {
+                            const px = lm[fi].x * cw;
+                            const py = lm[fi].y * ch;
+
+                            // Check if this finger is the expected one for the target note
+                            const isExpectedFinger = targetFingerInfo &&
+                                targetFingerInfo.hand === userHand &&
+                                targetFingerInfo.tipIdx === fi;
+
+                            if (isExpectedFinger) {
+                                // BIG GLOWING TARGET on the expected finger (matches ar_studio.py visuals)
+                                const glowPulse = 0.7 + 0.3 * Math.sin(performance.now() / 100);
+                                // Multiple outer rings for glow
+                                ctx.shadowColor = '#00ff88';
+                                ctx.shadowBlur = 30 * glowPulse;
+                                ctx.strokeStyle = 'rgba(0, 200, 0, 0.5)';
+                                ctx.lineWidth = 2;
+                                ctx.beginPath(); ctx.arc(px, py, 50, 0, Math.PI * 2); ctx.stroke();
+                                ctx.strokeStyle = 'rgba(0, 255, 0, 0.7)';
+                                ctx.lineWidth = 3;
+                                ctx.beginPath(); ctx.arc(px, py, 40, 0, Math.PI * 2); ctx.stroke();
+                                ctx.strokeStyle = '#00ff88';
+                                ctx.lineWidth = 4;
+                                ctx.beginPath(); ctx.arc(px, py, 30, 0, Math.PI * 2); ctx.stroke();
+                                // Filled core
+                                ctx.fillStyle = 'rgba(0, 255, 136, ' + (0.9 * glowPulse) + ')';
+                                ctx.beginPath(); ctx.arc(px, py, 20, 0, Math.PI * 2); ctx.fill();
+                                // White border on core
+                                ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+                                ctx.lineWidth = 2;
+                                ctx.beginPath(); ctx.arc(px, py, 20, 0, Math.PI * 2); ctx.stroke();
+                                ctx.shadowBlur = 0;
+
+                                // Finger + note label
+                                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                                ctx.fillRect(px - 40, py - 75, 80, 22);
+                                ctx.fillStyle = '#00ff88';
+                                ctx.font = 'bold 14px Inter, sans-serif';
+                                ctx.textAlign = 'center';
+                                ctx.fillText(targetNote + ' — ' + FINGER_NAMES[idx], px, py - 58);
+                            } else {
+                                // Normal fingertip (white dot, small)
+                                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                                ctx.beginPath();
+                                ctx.arc(px, py, 6, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                        });
+                    }
+                }
+
+                // Draw hit flashes
+                const now = performance.now();
+                hitFlashes = hitFlashes.filter(f => {
+                    const age = now - f.t;
+                    if (age > 600) return false;
+                    const alpha = 1 - age / 600;
+                    const radius = 30 + age * 0.15;
+                    ctx.globalAlpha = alpha;
+                    ctx.strokeStyle = '#00ff88';
+                    ctx.lineWidth = 3;
+                    ctx.shadowColor = '#00ff88';
+                    ctx.shadowBlur = 20;
+                    ctx.beginPath();
+                    ctx.arc(f.x, f.y, radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+
+                    ctx.fillStyle = '#00ff88';
+                    ctx.font = 'bold 14px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(f.note, f.x, f.y - radius - 8);
+                    ctx.globalAlpha = 1;
+                    return true;
+                });
+
+                // Score display
+                // Song ended
+                if (songPlaying && currentNoteIdx >= songNotes.length) {
+                    stopSong();
+                }
+            }
+            requestAnimationFrame(drawFrame);
+
+            /* ── Hand Tracking ── */
+            let prevY = {}, cooldowns = {}, prevTime = 0;
+            let results_cache_handedness = []; // cache handedness labels for draw
+            const hands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4/${f}` });
+            hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5, selfieMode: true });
+            hands.onResults(results => {
+                lastHandResults = results;
+                // Native SelfieMode handles physical hand labeling correctly
+                results_cache_handedness = (results.multiHandedness || []).map(h => h.label || 'Right');
+                if (!results.multiHandLandmarks) return;
+                const now = performance.now();
+                const dt = (now - prevTime) / 1000;
+                prevTime = now;
+                if (dt <= 0 || dt > 0.5) return;
+                const threshold = parseFloat(sensitivitySlider.value);
+
+                for (let h = 0; h < results.multiHandLandmarks.length; h++) {
+                    const lm = results.multiHandLandmarks[h];
+                    const rawLabel = results.multiHandedness[h]?.label || 'Right';
+                    const side = rawLabel; // Native SelfieMode automatically assigns correct Physical hand!
+
+                    FINGERTIPS.forEach((fi, fIdx) => {
+                        const key = side + '_' + fi;
+                        const y = lm[fi].y;
+                        if (prevY[key] !== undefined) {
+                            const vel = (y - prevY[key]) / dt;
+                            if (vel > threshold && (!cooldowns[key] || now > cooldowns[key])) {
+                                // Finger to Note mapping
+                                const baseLetter = FINGER_TO_NOTE[key];
+                                if (!baseLetter) return; // Unmapped fingers do nothing
+
+                                // STRICT SINGLE-FINGER RULE: 
+                                // Mute all other fingers that aren't the exact expected finger for this note
+                                if (songPlaying && currentNoteIdx < songNotes.length) {
+                                    const sn = songNotes[currentNoteIdx];
+                                    let expectedLetter = sn.note.replace(/[\d]/g, '').toUpperCase();
+                                    if (expectedLetter.includes('#') || expectedLetter.includes('B')) {
+                                        expectedLetter = expectedLetter[0]; // naive fallback
+                                    }
+                                    if (baseLetter !== expectedLetter) {
+                                        return; // Mute and ignore this finger strike entirely!
+                                    }
+                                }
+
+                                // Map vertical zone to playback speed (2x, 1x, 0.5x)
+                                const tipY = lm[fi].y;
+                                let speedMult = 1.0;
+                                let zoneIdx = 1; // Mid
+                                if (tipY < 0.33) { speedMult = 2.0; zoneIdx = 0; } // High
+                                else if (tipY > 0.66) { speedMult = 0.5; zoneIdx = 2; } // Low
+
+                                // For lookup, target note defaults to Octave 4 visually ('C4')
+                                const note = baseLetter + '4'; // We map all strikes as the base Octave 4, playing it faster/slower
+
+                                playNote(note, Math.min(1.0, vel / (threshold * 3)), speedMult);
+                                cooldowns[key] = now + 200;
+
+                                const px = lm[fi].x * canvasEl.width;
+                                const py = lm[fi].y * canvasEl.height;
+                                hitFlashes.push({ x: px, y: py, t: now, note: note });
+
+                                checkHit(note);
+                            }
+                        }
+                        prevY[key] = y;
+                    });
+                }
+            });
+
+            function checkHit(playedNote) {
+                if (!songPlaying || currentNoteIdx >= songNotes.length) return;
+                const sn = songNotes[currentNoteIdx];
+                if (!sn) return;
+
+                // Strict Note Checking based on Letter Mapping (ignoring Octave/Sharps for hits)
+                // Since the user is physically limited to exactly 1 finger per note letter using Fixed Mapping,
+                // we check if the base letter they played matches the base letter of the expected song note.
+
+                let targetLetter = sn.note.replace(/[\d]/g, '').toUpperCase();
+                if (targetLetter.includes('#') || targetLetter.includes('B')) {
+                    targetLetter = targetLetter[0]; // Convert F# -> F
+                }
+                const playedLetter = playedNote.replace(/[\d]/g, '').toUpperCase();
+
+                if (targetLetter === playedLetter) {
+                    score.hit++;
+                    currentNoteIdx++;
+
+                    // Reset cooldowns so the user can immediately play the next note
+                    for (let key in cooldowns) {
+                        cooldowns[key] = 0;
+                    }
+                } else {
+                    // Ignore wrong notes entirely
+                }
+            }
+
+            const cam = new Camera(videoEl, { onFrame: async () => { await hands.send({ image: videoEl }); }, width: 640, height: 480 });
+            cam.start();
+
+            /* ── Start / Stop ── */
+            startBtn.addEventListener('click', () => {
+                if (songPlaying) { stopSong(); return; }
+                const sid = songSelect.value;
+                if (!sid) { alert('Please select a song first'); return; }
+                if (songNotes.length > 0) { startSong(); return; }
+                fetchSongAndStart(sid);
+            });
+
+            function fetchSongAndStart(songId) {
+                midiStatus.textContent = 'Loading...';
+                fetch(API + '/api/songs/' + encodeURIComponent(songId))
+                    .then(r => { if (!r.ok) throw new Error('Song not found'); return r.json(); })
+                    .then(data => {
+                        if (data.notes && data.notes.length) {
+                            songNotes = data.notes;
+                            midiStatus.textContent = songNotes.length + ' notes loaded';
+                            startSong();
+                        } else {
+                            midiStatus.textContent = 'No notes in song';
+                        }
+                    })
+                    .catch(() => { midiStatus.textContent = 'Song not on server'; });
+            }
+
+            songSelect.addEventListener('change', () => {
+                if (songPlaying) stopSong();
+                songNotes = [];
+            });
+
+            /* ── Populate songs from API ── */
+            fetch(API + '/api/songs')
+                .then(r => r.json())
+                .then(data => {
+                    const ids = data.songs || [];
+                    ids.forEach(id => {
+                        if (songSelect.querySelector('option[value="' + id + '"]')) return;
+                        const opt = document.createElement('option');
+                        opt.value = id;
+                        opt.textContent = id.replace(/_/g, ' ') + ' (imported)';
+                        songSelect.appendChild(opt);
+                    });
+                })
+                .catch(() => { });
+
+            /* ── MIDI Upload with Track Picker ── */
+            midiUploadBtn.addEventListener('click', () => midiFileInput.click());
+
+            midiFileInput.addEventListener('change', () => {
+                const file = midiFileInput.files[0];
+                if (!file) return;
+                midiStatus.textContent = 'Uploading MIDI...';
+                const fd = new FormData();
+                fd.append('file', file);
+
+                fetch(API + '/api/upload-midi', { method: 'POST', body: fd })
+                    .then(function (r) {
+                        return r.text().then(function (text) {
+                            var data;
+                            try { data = text ? JSON.parse(text) : {}; } catch (e) {
+                                throw new Error(r.status + ' ' + (r.statusText || '') + (text ? ': ' + text.slice(0, 80) : ''));
+                            }
+                            if (!r.ok) {
+                                var msg = (data && (data.detail || data.error)) || r.statusText || 'Server error';
+                                throw new Error(typeof msg === 'string' ? msg : (msg.message || JSON.stringify(msg)));
+                            }
+                            return data;
+                        });
+                    })
+                    .then(function (data) {
+                        if (data.error) { midiStatus.textContent = 'Error: ' + data.error; return; }
+                        // music_api returns { notes, song_id, note_count, ... }
+                        if (data.notes && data.notes.length) {
+                            songNotes = data.notes;
+                            midiStatus.textContent = data.note_count + ' notes loaded';
+                            // Add to dropdown
+                            let opt = songSelect.querySelector('option[value="' + data.song_id + '"]');
+                            if (!opt) {
+                                opt = document.createElement('option');
+                                opt.value = data.song_id;
+                                opt.textContent = (data.song_id || 'imported').replace(/_/g, ' ') + ' (MIDI)';
+                                songSelect.appendChild(opt);
+                            }
+                            songSelect.value = data.song_id;
+                        } else {
+                            midiStatus.textContent = 'No notes found in MIDI';
+                        }
+                    })
+                    .catch(function (e) {
+                        midiStatus.textContent = e && e.message ? ('Upload failed: ' + e.message) : 'Upload failed — is the server running on ' + API + '?';
+                    });
+                midiFileInput.value = '';
+            });
+
+            function showTrackPicker(midiId, tracks) {
+                trackList.innerHTML = '';
+                if (!tracks.length) { midiStatus.textContent = 'No tracks found'; return; }
+                const hasPiano = tracks.some(t => t.family === 'piano' && !t.is_drum);
+
+                if (hasPiano) {
+                    const pb = document.createElement('button');
+                    pb.style.cssText = 'width:100%;text-align:left;padding:12px 16px;background:rgba(0,255,136,0.15);border:1px solid rgba(0,255,136,0.4);border-radius:10px;color:#fff;cursor:pointer;font-size:0.9rem;';
+                    const pc = tracks.filter(t => t.family === 'piano' && !t.is_drum).reduce((s, t) => s + t.note_count, 0);
+                    pb.innerHTML = '<strong style="color:#00ff88;">Piano Only</strong><br><span style="color:#888;font-size:0.8rem;">Extracts piano tracks (' + pc + ' notes)</span>';
+                    pb.onclick = () => extractAndLoad(midiId, { family: 'piano' });
+                    trackList.appendChild(pb);
+                }
+
+                const ab = document.createElement('button');
+                ab.style.cssText = 'width:100%;text-align:left;padding:12px 16px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);border-radius:10px;color:#fff;cursor:pointer;font-size:0.9rem;';
+                const ac = tracks.reduce((s, t) => s + (t.is_drum ? 0 : t.note_count), 0);
+                ab.innerHTML = '<strong style="color:#00ff88;">All Tracks</strong><br><span style="color:#888;font-size:0.8rem;">All instruments (' + ac + ' notes)</span>';
+                ab.onclick = () => extractAndLoad(midiId, {});
+                trackList.appendChild(ab);
+
+                tracks.forEach(t => {
+                    if (t.is_drum) return;
+                    const btn = document.createElement('button');
+                    btn.style.cssText = 'width:100%;text-align:left;padding:12px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;cursor:pointer;font-size:0.9rem;';
+                    const badge = t.family === 'piano' ? ' <span style="color:#00ff88;">[Piano]</span>' : '';
+                    btn.innerHTML = '<strong>' + (t.name || t.program_name) + badge + '</strong><br><span style="color:#888;font-size:0.8rem;">' + t.program_name + ' — ' + t.note_count + ' notes</span>';
+                    btn.onclick = () => extractAndLoad(midiId, { track_index: t.index });
+                    trackList.appendChild(btn);
+                });
+                trackPickerOverlay.style.display = 'flex';
+            }
+
+            trackPickerCancel.addEventListener('click', () => {
+                trackPickerOverlay.style.display = 'none';
+                midiStatus.textContent = '';
+            });
+
+            function extractAndLoad(midiId, opts) {
+                trackPickerOverlay.style.display = 'none';
+                midiStatus.textContent = 'Extracting...';
+                fetch(API + '/api/extract-track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ midi_id: midiId, ...opts }),
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.success) { midiStatus.textContent = 'Error: ' + (data.error || ''); return; }
+                        songNotes = data.notes;
+                        midiStatus.textContent = data.note_count + ' notes loaded';
+                        let opt = songSelect.querySelector('option[value="' + data.song_id + '"]');
+                        if (!opt) {
+                            opt = document.createElement('option');
+                            opt.value = data.song_id;
+                            opt.textContent = (data.song_id || 'imported').replace(/_/g, ' ') + ' (MIDI)';
+                            songSelect.appendChild(opt);
+                        }
+                        songSelect.value = data.song_id;
+                    })
+                    .catch(() => { midiStatus.textContent = 'Extract failed'; });
+            }
+
+            document.addEventListener('click', () => { initAudio(); }, { once: true });
+        })();
     </script>
 </body>
 

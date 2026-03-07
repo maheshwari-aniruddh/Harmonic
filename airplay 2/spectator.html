@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirJam Spectator</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .spectator-container { max-width: 800px; margin: 2rem auto; padding: 20px; }
+        .spectator-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .spectator-title { color: #00ff88; font-size: 1.25rem; }
+        .spectator-status { color: #888; font-size: 0.9rem; }
+        .note-log { background: rgba(0,0,0,0.5); border: 1px solid rgba(0,255,136,0.3); border-radius: 12px; padding: 16px; max-height: 60vh; overflow-y: auto; }
+        .note-log-entry { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-family: monospace; color: #ccc; }
+        .note-log-entry:last-child { border-bottom: none; }
+        .spectator-room { color: #00ff88; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="animated-bg"></div>
+    <div class="spectator-container">
+        <div class="spectator-header">
+            <h1 class="spectator-title">🎵 AirJam Spectator</h1>
+            <span class="spectator-status" id="spectator-status">Connecting...</span>
+        </div>
+        <p>Room: <span class="spectator-room" id="spectator-room">-</span></p>
+        <div class="note-log" id="note-log">
+            <div class="note-log-entry" style="color:#666">Notes will appear here when players play.</div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const roomId = (params.get('room') || '').trim().toUpperCase();
+            const logEl = document.getElementById('note-log');
+            const statusEl = document.getElementById('spectator-status');
+            const roomEl = document.getElementById('spectator-room');
+            const WS_BASE = 'ws://localhost:8765';
+            const MAX_ENTRIES = 20;
+            const entries = [];
+
+            if (!roomId) {
+                statusEl.textContent = 'No room in URL. Use ?room=ABC123';
+                roomEl.textContent = '-';
+                return;
+            }
+            roomEl.textContent = roomId;
+
+            const ws = new WebSocket(WS_BASE + '/spectate/' + encodeURIComponent(roomId));
+            ws.onopen = function () {
+                statusEl.textContent = 'Connected';
+                statusEl.style.color = '#00ff88';
+            };
+            ws.onclose = function () {
+                statusEl.textContent = 'Disconnected';
+                statusEl.style.color = '#888';
+            };
+            ws.onerror = function () {
+                statusEl.textContent = 'Error';
+            };
+            ws.onmessage = function (e) {
+                try {
+                    const d = JSON.parse(e.data);
+                    if (d.type === 'ping') return;
+                    if (d.type === 'NOTE_PLAYED') {
+                        const time = new Date();
+                        const ts = time.getHours().toString().padStart(2,'0') + ':' + time.getMinutes().toString().padStart(2,'0') + ':' + time.getSeconds().toString().padStart(2,'0');
+                        const emoji = d.instrument === 'drums' ? '🥁' : (d.instrument === 'finger_drums' ? '👆' : '🎹');
+                        const line = emoji + ' ' + (d.note || '-') + ' @ ' + ts;
+                        entries.push(line);
+                        if (entries.length > MAX_ENTRIES) entries.shift();
+                        logEl.innerHTML = entries.map(s => '<div class="note-log-entry">' + s + '</div>').join('');
+                    }
+                } catch (err) {}
+            };
+        })();
+    </script>
+</body>
+</html>

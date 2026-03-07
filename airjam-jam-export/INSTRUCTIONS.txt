@@ -1,0 +1,155 @@
+================================================================================
+  AIRJAM JAM SESSION – IMPLEMENTATION & TESTING INSTRUCTIONS
+================================================================================
+
+This folder contains all files needed for the real-time multiplayer Jam Session
+feature. Integrate them into your existing AirJam (AirPlay) project or run
+standalone for testing.
+
+--------------------------------------------------------------------------------
+1. FILES INCLUDED
+--------------------------------------------------------------------------------
+
+  session_server.py     Jam Session WebSocket server (FastAPI, port 8502)
+  ar_studio.py          Streamlit AR backend (sends notes via postMessage)
+  start.sh              Launch script (starts servers + opens frontend)
+  airplay 2/
+    instruments.html    Instruments page with Jam Session card and jam pages
+    app.js              Frontend logic: JamSessionManager, host/join, WS
+    styles.css          Styles for jam-setup, jam buttons, room code, etc.
+
+--------------------------------------------------------------------------------
+2. PREREQUISITES
+--------------------------------------------------------------------------------
+
+  • Python 3.10+
+  • Install for Jam Session server:
+      pip install uvicorn fastapi
+  • Install for full app (AR + Streamlit):
+      pip install streamlit opencv-python mediapipe simpleaudio
+  • Modern browser (Chrome, Safari, Firefox)
+  • For two machines: both on same Wi-Fi; host firewall allows ports 8080, 8502
+
+--------------------------------------------------------------------------------
+3. HOW TO INTEGRATE INTO YOUR PROJECT
+--------------------------------------------------------------------------------
+
+  Option A – Replace existing files (if you already have AirPlay):
+    1. Back up your current project.
+    2. Copy session_server.py to project root.
+    3. Copy start.sh to project root (or merge its Jam/uvicorn lines into yours).
+    4. Copy airplay_2/instruments.html, app.js, styles.css over your
+       existing "airplay 2" (or equivalent) frontend folder.
+    5. Copy ar_studio.py over your existing file only if you want the
+       postMessage for drums; otherwise ensure your version sends
+       postMessage({ type: "notePlayed", note: "..." }) for piano and drums.
+
+  Option B – New folder (clean test):
+    1. Create a project folder, e.g. "airjam-test".
+    2. Copy session_server.py and start.sh to the project root.
+    3. Create folder "airplay 2" and put instruments.html, app.js, styles.css
+       inside it.
+    4. Copy ar_studio.py to the root if you want to run the full AR backend.
+    5. start.sh and the app expect the frontend in a folder named "airplay 2".
+
+--------------------------------------------------------------------------------
+4. HOW TO RUN (SINGLE MACHINE – LOCALHOST)
+--------------------------------------------------------------------------------
+
+  4.1 Create a virtualenv and install deps (one-time):
+        python3 -m venv .venv_new
+        .venv_new/bin/pip install uvicorn fastapi
+        # Optional, for AR:
+        .venv_new/bin/pip install streamlit opencv-python mediapipe simpleaudio
+
+  4.2 Start the Jam Session server (required for multiplayer):
+        .venv_new/bin/python -m uvicorn session_server:app --host 0.0.0.0 --port 8502
+        Leave this running in a terminal.
+
+  4.3 Optional – start Streamlit (for AR camera):
+        python3 -m streamlit run ar_studio.py --server.headless true --server.port 8501
+
+  4.4 Open the frontend:
+        Open in browser:  airplay 2/instruments.html
+        (Double-click the file or drag into browser.)
+
+  4.5 Test Jam on one machine:
+        • Click "Jam Session".
+        • Click "Host Session" → note the 6-letter code.
+        • Open a second browser tab to the same instruments.html.
+        • Click "Jam Session" → "Join a room" → enter the code → "Join room".
+        • In both tabs, choose Piano or Drums and click into the jam.
+        • Play in one tab; the other should hear a tone and see key/pad flash.
+
+--------------------------------------------------------------------------------
+5. HOW TO RUN (TWO MACHINES – SAME NETWORK)
+--------------------------------------------------------------------------------
+
+  5.1 On the HOST machine (e.g. your laptop):
+        • Start Jam Session server (must listen on 0.0.0.0):
+            .venv_new/bin/python -m uvicorn session_server:app --host 0.0.0.0 --port 8502
+        • Start an HTTP server so the client can load the app:
+            cd "airplay 2"
+            python3 -m http.server 8080
+        • Note the host IP, e.g. 192.168.1.5:
+            Mac: ipconfig getifaddr en0
+            Linux: hostname -I | awk '{print $1}'
+
+  5.2 On the CLIENT machine (second laptop/phone):
+        • In the browser open:  http://HOST_IP:8080/instruments.html
+          Example: http://192.168.1.5:8080/instruments.html
+
+  5.3 Host: Jam Session → Host Session → get code → choose Piano or Drums.
+      Client: Jam Session → Join a room → enter same code → Join room → choose instrument.
+
+  5.4 Firewall: On the host, allow incoming TCP ports 8080 and 8502.
+
+--------------------------------------------------------------------------------
+6. HOW TO VERIFY IT WORKS
+--------------------------------------------------------------------------------
+
+  • Create room: Click "Host Session". You should see a 6-letter code (e.g. XJAM42).
+  • Join room: In another tab/device, enter that code and click "Join room".
+    You should see "Connected to room: XJAM42" and Piano/Drums buttons.
+  • Connect: Both choose Piano (or Drums) and go to the jam screen.
+    The room badge should show "Room: XJAM42".
+  • Send note: Play a key or drum (or click). The other tab/device should:
+    - Play a short tone
+    - Flash the corresponding key or drum pad
+  • If "Host Session" fails: Session server not running or port 8502 blocked.
+  • If "Join room" does nothing: Check code is 6 characters; try Host on same machine first.
+  • If other device never hears you: Both must use the same URL host (e.g. host IP)
+    so the WebSocket connects to the same server (app.js uses window.location.hostname).
+
+--------------------------------------------------------------------------------
+7. PORTS SUMMARY
+--------------------------------------------------------------------------------
+
+  8502   Jam Session WebSocket server (session_server.py) – REQUIRED for jam
+  8501   Streamlit AR Studio (ar_studio.py) – optional, for camera tracking
+  8080   HTTP server for frontend – needed for two-machine testing
+  8765   Other WebSocket server (websocket_server.py) – not required for jam
+  8766   Music API – not required for jam
+
+--------------------------------------------------------------------------------
+8. TROUBLESHOOTING
+--------------------------------------------------------------------------------
+
+  • "Could not create room"
+    → Start session_server.py on port 8502; check firewall.
+
+  • "Enter the 6-letter room code"
+    → You clicked Join with an empty input; type the code from the host.
+
+  • No sound/visual from partner
+    → Both must be in the same room (same code) and both on the jam piano/drums
+      screen. Check browser console (F12) for WebSocket errors.
+
+  • Works on one machine but not from another
+    → Client must open http://HOST_IP:8080/instruments.html (not file://).
+    → Host must run: uvicorn --host 0.0.0.0 and python -m http.server 8080.
+    → Firewall must allow 8080 and 8502.
+
+================================================================================
+  END OF INSTRUCTIONS
+================================================================================

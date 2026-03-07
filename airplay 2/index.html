@@ -392,7 +392,18 @@
                             <option value="mary">Mary Had a Little Lamb</option>
                             <option value="fur-elise">Für Elise (Excerpt)</option>
                             <option value="scale">C Major Scale</option>
+                            <option value="shape-of-you">Shape of You</option>
                         </select>
+                    </div>
+                    <div class="upload-mp3-zone" id="upload-mp3-zone">
+                        <label class="song-label">Import MP3</label>
+                        <input type="file" id="mp3-upload-input" accept=".mp3" style="display:none">
+                        <button type="button" class="upload-mp3-btn" id="upload-mp3-btn">Choose MP3...</button>
+                        <span id="upload-mp3-status" class="upload-status"></span>
+                    </div>
+                    <div class="sheet-view-toggle">
+                        <label class="song-label">Sheet music</label>
+                        <button type="button" class="sheet-toggle-btn" id="sheet-toggle-btn">Show staff</button>
                     </div>
                     <div class="tempo-control">
                         <label class="tempo-label">Tempo</label>
@@ -418,6 +429,9 @@
                 </div>
             </div>
             <div class="piano-keys" id="piano-practice-keys"></div>
+            <div id="sheet-music-container" class="sheet-music-container" style="display:none;">
+                <div id="sheet-music-inner"></div>
+            </div>
         </div>
     </div>
 
@@ -626,6 +640,8 @@
     <!-- Cursor Trail Canvas -->
     <canvas id="cursor-trail"></canvas>
 
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4/build/cjs/vexflow.js"></script>
+    <script src="sheet_renderer.js"></script>
     <script src="app.js"></script>
 
     <!-- Apple-style Scroll Transitions -->

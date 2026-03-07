@@ -383,6 +383,18 @@ class AudioEngine:
                 print(f"✗ Drum file not found: {path}")
                 if 'c1' in self.sounds:
                     self.sounds[name] = self.sounds['c1']
+        # Load any extra .wav from drum_sounds/ (e.g. clap, rimshot for finger drums)
+        drum_dir = "drum_sounds"
+        if os.path.isdir(drum_dir):
+            for f in os.listdir(drum_dir):
+                if f.lower().endswith(".wav"):
+                    name = os.path.splitext(f)[0].upper()
+                    if name not in self.sounds:
+                        path = os.path.join(drum_dir, f)
+                        wave_obj, _, _, _, _ = self._load_wav(path)
+                        if wave_obj:
+                            self.sounds[name] = wave_obj
+                            print(f"✓ Loaded drum: {name} from {path}")
 
     def play(self, note_name, octave_modifier=""):
         """Play a sound (non-blocking)"""
@@ -424,7 +436,38 @@ class HandPhysics:
         # Track previous Y positions for velocity smoothing (multiple frames)
         self.y_history = {}  # {token: [y1, y2, y3...]}
         self.history_size = 3
-        
+
+        # Finger drums: per-finger cooldown (key = "left_4", "right_8", etc.)
+        self.finger_cooldown_until = {}
+        self.finger_drum_cooldown = 0.12
+
+    def detect_finger_strikes(self, hand_landmarks_list, handedness_list, dt, velocity_threshold=0.15):
+        """
+        For 10-finger drum mode: detect downward strike per fingertip (indices 4,8,12,16,20).
+        Returns list of (finger_key, velocity) e.g. ("left_4", 0.5). Updates prev_landmarks.
+        """
+        strikes = []
+        now = time.time()
+        for i, hand_landmarks in enumerate(hand_landmarks_list):
+            hand_side = (handedness_list[i][0].category_name if handedness_list and i < len(handedness_list) else "Unknown").lower()
+            if "left" not in hand_side and "right" not in hand_side:
+                hand_side = "left" if i == 0 else "right"
+            hand_id = f"{hand_side}_{i}"
+            prev_lm = self.prev_landmarks.get(hand_id)
+            for tip_idx in [4, 8, 12, 16, 20]:
+                finger_key = f"{hand_side}_{tip_idx}"
+                if self.finger_cooldown_until.get(finger_key, 0) > now:
+                    continue
+                tip_y = hand_landmarks[tip_idx].y
+                if prev_lm is not None:
+                    prev_y = prev_lm[tip_idx].y
+                    vel = (tip_y - prev_y) / dt if dt > 0 else 0
+                    if vel > velocity_threshold:
+                        strikes.append((finger_key, vel))
+                        self.finger_cooldown_until[finger_key] = now + self.finger_drum_cooldown
+            self.prev_landmarks[hand_id] = hand_landmarks
+        return strikes
+
     def calculate_velocity(self, current_y, prev_y, dt):
         if dt <= 0: return 0
         return (current_y - prev_y) / dt
@@ -666,17 +709,66 @@ DRUM_CHAR_TO_ZONE = {
     'H': 'HAT',
 }
 
+# Finger drums: 10 fingers -> drum sound (MediaPipe tip indices 4,8,12,16,20 per hand)
+# Matches the 5-pad layout from wave-main (kick, snare, hihat, tom1, tom2)
+FINGER_DRUM_MAP = {
+    'left_4': 'KICK',  'left_8': 'SNARE', 'left_12': 'HAT',  'left_16': 'TOM',  'left_20': 'KICK',
+    'right_4': 'SNARE','right_8': 'HAT',  'right_12': 'TOM', 'right_16': 'KICK','right_20': 'HAT',
+}
+# Color per drum for the overlay (BGR for OpenCV)
+FINGER_DRUM_COLORS = {
+    'KICK':  (235, 99, 37),   # blue #2563eb
+    'SNARE': (237, 58, 124),  # purple #7c3aed
+    'HAT':   (105, 150, 5),   # green #059669
+    'TOM':   (11, 158, 245),  # amber #f59e0b
+}
+
+# --- Unified song loader: supports .json (notes with t, note, dur) and .txt (legacy) ---
+def load_piano_song(song_name: str, music_dir: str = "music_files"):
+    """Load piano song from music_files. Tries .json first (unified format), then .txt. Returns list of note names (e.g. 'C' or 'C4' for display)."""
+    import json
+    base = os.path.join(music_dir, song_name)
+    # Try JSON first (unified format: { "notes": [ {"t", "note", "dur"}, ... ], "bpm": optional })
+    json_path = base + ".json"
+    if os.path.isfile(json_path):
+        try:
+            with open(json_path, "r") as f:
+                data = json.load(f)
+            notes = data.get("notes", [])
+            # For player mode we use note names; single letter for backward compat with existing comparison
+            out = []
+            for n in notes:
+                note_str = (n.get("note", "") if isinstance(n, dict) else str(n)).strip()
+                if note_str:
+                    # Player mode compares single letter (C,D,E...); use first char for compat
+                    out.append(note_str[0].upper())
+            if out:
+                print(f"[PLAYER] Loaded song '{song_name}' (JSON): {len(out)} notes")
+                return out
+        except Exception as e:
+            print(f"[PLAYER] JSON load failed: {e}")
+    # Fallback: .txt (legacy space-separated note names)
+    txt_path = base + ".txt"
+    if os.path.isfile(txt_path):
+        try:
+            with open(txt_path, "r") as f:
+                song_text = f.read()
+            current_song = [n.upper() for n in song_text.split() if n.strip()]
+            if current_song:
+                print(f"[PLAYER] Loaded song '{song_name}' (TXT): {len(current_song)} notes")
+                return current_song
+        except Exception as e:
+            print(f"[PLAYER] TXT load failed: {e}")
+    return None
+
 # Load song if in piano player mode
 if player_mode:
     song_name = query_params.get("song", "twinkle")
-    song_path = f"music_files/{song_name}.txt"
-    try:
-        with open(song_path, 'r') as f:
-            song_text = f.read()
-            current_song = [n.upper() for n in song_text.split() if n.strip()]
-            print(f"[PLAYER] Loaded song '{song_name}': {len(current_song)} notes")
-    except:
-        print(f"[PLAYER] Failed to load song: {song_path}")
+    loaded = load_piano_song(song_name)
+    if loaded:
+        current_song = loaded
+    else:
+        print(f"[PLAYER] Failed to load song: {song_name}")
         current_song = ['C', 'D', 'E', 'F', 'G', 'A', 'B']  # Default scale
     
     if 'player_note_index' not in st.session_state:
@@ -762,15 +854,41 @@ elif url_mode == "drums" or url_mode == "drums_player":
     else:
         velocity_threshold = 0.15
         print(f"[EMBED] Drums mode from URL, threshold: 0.15 (default)")
+elif url_mode == "finger_drums" or query_params.get("instrument", "").lower() == "finger_drums":
+    mode = "Finger Drums (10-Finger)"
+    url_threshold = query_params.get("threshold", None)
+    if url_threshold is not None:
+        try:
+            velocity_threshold = float(url_threshold)
+        except:
+            velocity_threshold = 0.15
+    else:
+        velocity_threshold = 0.15
+    print(f"[EMBED] Finger Drums mode from URL, threshold: {velocity_threshold}")
 else:
     # Normal mode - show sidebar controls
-    mode = st.sidebar.radio("🎵 Instrument Mode", ["Piano (10-Finger)", "Air Drums (4-Zone)"])
+    mode = st.sidebar.radio("🎵 Instrument Mode", ["Piano (10-Finger)", "Air Drums (4-Zone)", "Finger Drums (10-Finger)"])
     if mode == "Piano (10-Finger)":
         velocity_threshold = 0.5
         st.sidebar.markdown('<p class="status-piano">Piano Mode: Sensitivity 0.5</p>', unsafe_allow_html=True)
+    elif mode == "Finger Drums (10-Finger)":
+        velocity_threshold = 0.15
+        st.sidebar.markdown('<p class="status-drums">Finger Drums: 10 fingers</p>', unsafe_allow_html=True)
     else:
         velocity_threshold = 0.15
         st.sidebar.markdown('<p class="status-drums">Drums Mode: Sensitivity 0.15</p>', unsafe_allow_html=True)
+
+# Calibration: load profile if exists (for velocity thresholds)
+try:
+    from calibration import load_profile, save_profile, write_default_profile, compute_noise_floor, compute_hand_span
+    _profile = load_profile()
+except Exception:
+    _profile = None
+if _profile:
+    if mode == "Piano (10-Finger)" and "velocity_threshold_piano" in _profile:
+        velocity_threshold = float(_profile["velocity_threshold_piano"])
+    elif (mode == "Air Drums (4-Zone)" or mode == "Finger Drums (10-Finger)") and "velocity_threshold_drums" in _profile:
+        velocity_threshold = float(_profile["velocity_threshold_drums"])
 
 print(f"[CONFIG] Mode: {mode}, Threshold: {velocity_threshold}, Embed: {embed_mode}")
 
@@ -912,6 +1030,27 @@ status_log = st.empty() if embed_mode else st.sidebar.empty()
 if not embed_mode:
     st.sidebar.markdown("### Status")
 
+# --- Calibration (first launch, non-embed) ---
+need_calibration = not embed_mode and _profile is None
+if need_calibration and "calibration_phase" not in st.session_state:
+    st.session_state.calibration_phase = "spread"
+if need_calibration and st.session_state.get("calibration_phase") == "spread":
+    st.title("Calibration")
+    st.write("Spread your hands so we can detect your hand span and sensitivity.")
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("Next"):
+            st.session_state.calibration_phase = "hold_still"
+            st.session_state.calibration_frames = []
+            st.session_state.calibration_velocities = []
+            st.session_state.calibration_start = time.time()
+            st.rerun()
+    with c2:
+        if st.button("Skip calibration"):
+            write_default_profile()
+            st.session_state.calibration_phase = "done"
+            st.rerun()
+    st.stop()
 
 if run:
     # Init - Force reload audio if not all drums are loaded
@@ -1034,7 +1173,56 @@ if run:
             song_active = (not countdown_active) and (st.session_state.player_note_index < len(current_song))
         
         annotated_image = frame.copy()
-        
+
+        # --- Calibration data collection (hold_still / tap) ---
+        cal_phase = st.session_state.get("calibration_phase")
+        if cal_phase == "hold_still":
+            frames_list = st.session_state.setdefault("calibration_frames", [])
+            if results.hand_landmarks:
+                for i, hand_landmarks in enumerate(results.hand_landmarks):
+                    span = compute_hand_span(hand_landmarks)
+                    side = "left" if (results.handedness and i < len(results.handedness) and "Left" in results.handedness[i][0].category_name) else "right"
+                    frames_list.append({"span": span, "side": side})
+            if len(frames_list) >= 90:
+                left_spans = [x["span"] for x in frames_list if x["side"] == "left"]
+                right_spans = [x["span"] for x in frames_list if x["side"] == "right"]
+                st.session_state.calibration_hand_span_left = float(sum(left_spans) / len(left_spans)) if left_spans else 0.2
+                st.session_state.calibration_hand_span_right = float(sum(right_spans) / len(right_spans)) if right_spans else 0.21
+                st.session_state.calibration_phase = "tap"
+                st.session_state.calibration_velocities = []
+                st.session_state.calibration_tap_start = time.time()
+            cv2.putText(annotated_image, "Hold still... %d/90" % len(frames_list), (w//2 - 100, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 2)
+            frame_placeholder.image(annotated_image, channels="BGR", width=1000)
+            continue
+        if cal_phase == "tap":
+            vel_list = st.session_state.setdefault("calibration_velocities", [])
+            if results.hand_landmarks and "physics" in st.session_state:
+                ph = st.session_state.physics
+                for i, hand_landmarks in enumerate(results.hand_landmarks):
+                    hand_id = "Left_%d" % i if results.handedness and i < len(results.handedness) and "Left" in results.handedness[i][0].category_name else "Right_%d" % i
+                    prev_lm = ph.prev_landmarks.get(hand_id)
+                    if prev_lm:
+                        for tip_idx in [4, 8, 12, 16, 20]:
+                            v = (hand_landmarks[tip_idx].y - prev_lm[tip_idx].y) / dt if dt > 0 else 0
+                            vel_list.append(v)
+                    ph.prev_landmarks[hand_id] = hand_landmarks
+            elapsed = time.time() - st.session_state.get("calibration_tap_start", time.time())
+            if elapsed >= 2.0 or len(vel_list) >= 120:
+                thresh = compute_noise_floor(vel_list, percentile=90)
+                prof = {
+                    "velocity_threshold_piano": max(0.3, min(0.8, thresh + 0.1)),
+                    "velocity_threshold_drums": max(0.08, min(0.25, thresh * 0.5)),
+                    "hand_span_left": st.session_state.get("calibration_hand_span_left", 0.2),
+                    "hand_span_right": st.session_state.get("calibration_hand_span_right", 0.21),
+                    "key_scale_factor": 1.1,
+                }
+                save_profile(prof)
+                st.session_state.calibration_phase = "done"
+            else:
+                cv2.putText(annotated_image, "Tap in the air (2s)... %.1fs" % elapsed, (w//2 - 120, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 2)
+                frame_placeholder.image(annotated_image, channels="BGR", width=1000)
+                continue
+
         # Define pads for drums - corner quarter circles (dark purple)
         # BGR format: dark purple = (128, 0, 128)
         DARK_PURPLE = (128, 0, 128)
@@ -1195,6 +1383,21 @@ if run:
         
         # Draw landmarks and Process
         if results.hand_landmarks:
+            # --- FINGER DRUMS: detect strikes and play ---
+            if mode == "Finger Drums (10-Finger)":
+                handedness_list = list(results.handedness) if results.handedness else []
+                strikes = physics.detect_finger_strikes(
+                    list(results.hand_landmarks), handedness_list, dt, velocity_threshold
+                )
+                for finger_key, vel in strikes:
+                    drum_name = FINGER_DRUM_MAP.get(finger_key)
+                    if drum_name:
+                        audio.play(drum_name, "")
+                        st.components.v1.html(
+                            f'<script>if(window.parent){{window.parent.postMessage({{type:"notePlayed",note:"{drum_name}"}},"*");}}</script>',
+                            height=0
+                        )
+
             # --- GESTURE SAFETY CHECK (Pre-Pass) - PIANO MODE ONLY ---
             gesture_suppress = False
             if mode == "Piano (10-Finger)":
@@ -1232,8 +1435,32 @@ if run:
                     handedness = "Unknown"
                 
                 # --- PHYSICS UPDATE ---
-                hand_id = f"{handedness}_{i}" 
-                
+                hand_id = f"{handedness}_{i}"
+
+                # Finger Drums: colored circles per drum, strike flash, label
+                if mode == "Finger Drums (10-Finger)":
+                    side = handedness.lower() if handedness != "Unknown" else ("left" if i == 0 else "right")
+                    for tip_idx in [4, 8, 12, 16, 20]:
+                        tip = hand_landmarks[tip_idx]
+                        px, py = int(tip.x * w), int(tip.y * h)
+                        fk = f"{side}_{tip_idx}"
+                        drum_label = FINGER_DRUM_MAP.get(fk, "?")
+                        drum_color = FINGER_DRUM_COLORS.get(drum_label, (0, 255, 255))
+                        cooldown_until = physics.finger_cooldown_until.get(fk, 0)
+                        just_hit = (time.time() - cooldown_until + physics.finger_drum_cooldown) < 0.15
+                        radius = 28 if just_hit else 18
+                        if just_hit:
+                            cv2.circle(annotated_image, (px, py), radius + 8, (255, 255, 255), 2)
+                            cv2.circle(annotated_image, (px, py), radius, drum_color, -1)
+                        else:
+                            overlay = annotated_image.copy()
+                            cv2.circle(overlay, (px, py), radius, drum_color, -1)
+                            cv2.addWeighted(overlay, 0.5, annotated_image, 0.5, 0, annotated_image)
+                            cv2.circle(annotated_image, (px, py), radius, drum_color, 2)
+                        cv2.putText(annotated_image, drum_label[:4], (px - 16, py + 5),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1, cv2.LINE_AA)
+                    continue
+
                 fingers_to_check = []
                 if mode == "Piano (10-Finger)":
                     fingers_to_check = [

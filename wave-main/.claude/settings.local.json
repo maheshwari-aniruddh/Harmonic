@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "Bash(ls:*)",
+      "Bash(chmod:*)",
+      "Bash(npm run build:*)",
+      "Bash(cat:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

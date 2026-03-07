@@ -3670,6 +3670,55 @@ body {
     color: white;
 }
 
+.upload-mp3-zone,
+.sheet-view-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.upload-mp3-btn,
+.sheet-toggle-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    cursor: pointer;
+}
+
+.upload-mp3-btn:hover,
+.sheet-toggle-btn:hover {
+    background: rgba(102, 126, 234, 0.3);
+    border-color: rgba(102, 126, 234, 0.5);
+}
+
+.upload-status {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.sheet-music-container {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: 180px;
+}
+
+.sheet-music-container #sheet-music-inner {
+    min-height: 160px;
+}
+
+.sheet-empty {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+    margin: 0;
+    padding: 1rem;
+}
+
 .tempo-control {
     display: flex;
     align-items: center;
@@ -4534,4 +4583,204 @@ body {
         width: 140px;
         height: 140px;
     }
+}
+
+/* Jam Session controls */
+.jam-session-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+.jam-session-controls .song-label {
+    color: rgba(255, 255, 255, 0.9);
+}
+.jam-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+.jam-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 255, 136, 0.4);
+    background: rgba(0, 255, 136, 0.15);
+    color: #00ff88;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+.jam-btn:hover {
+    background: rgba(0, 255, 136, 0.25);
+    border-color: rgba(0, 255, 136, 0.7);
+}
+.jam-btn.secondary {
+    border-color: rgba(102, 126, 234, 0.5);
+    background: rgba(102, 126, 234, 0.15);
+    color: #a5b4fc;
+}
+.jam-btn.secondary:hover {
+    background: rgba(102, 126, 234, 0.3);
+    border-color: rgba(102, 126, 234, 0.8);
+}
+.jam-btn.leave-btn {
+    border-color: rgba(255, 107, 107, 0.5);
+    background: rgba(255, 107, 107, 0.15);
+    color: #ff6b6b;
+}
+.jam-btn.leave-btn:hover {
+    background: rgba(255, 107, 107, 0.25);
+    border-color: rgba(255, 107, 107, 0.8);
+}
+.jam-room-input {
+    width: 5rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-align: center;
+    text-transform: uppercase;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+}
+.jam-room-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+.jam-room-code {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: #00ff88;
+}
+.jam-session-controls .hidden {
+    display: none !important;
+}
+
+/* Jam Session: Host/Client setup page */
+.jam-setup-container {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+.jam-setup-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+.jam-setup-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+.jam-setup-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1rem;
+}
+.jam-role-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+.jam-role-btn {
+    width: 100%;
+    padding: 1.5rem;
+    border-radius: 16px;
+    border: 2px solid rgba(0, 255, 136, 0.4);
+    background: rgba(0, 255, 136, 0.08);
+    color: #00ff88;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: center;
+}
+.jam-role-btn:hover {
+    background: rgba(0, 255, 136, 0.18);
+    border-color: rgba(0, 255, 136, 0.7);
+    transform: translateY(-2px);
+}
+.jam-role-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+.jam-role-label {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+.jam-role-desc {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+.jam-role-divider {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+}
+.jam-role-client {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.jam-role-client .jam-role-label {
+    color: rgba(255, 255, 255, 0.9);
+}
+.jam-join-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+.jam-join-row .jam-room-input {
+    flex: 1;
+    min-width: 0;
+}
+.jam-host-success {
+    padding: 1.5rem;
+    border-radius: 12px;
+    background: rgba(0, 255, 136, 0.08);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    text-align: center;
+}
+.jam-host-success.hidden {
+    display: none !important;
+}
+.jam-code-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+.jam-code-value {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 0.3em;
+    color: #00ff88;
+    margin-bottom: 1.5rem;
+}
+.jam-instrument-prompt {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+.jam-instrument-btns {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.jam-instrument-btns .jam-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+}
+.jam-room-badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    background: rgba(0, 255, 136, 0.2);
+    border: 1px solid rgba(0, 255, 136, 0.4);
+    color: #00ff88;
+    font-size: 0.85rem;
+    font-weight: 600;
 }

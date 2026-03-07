@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finger Drums - AirJam</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a1a1a 100%); min-height: 100vh; font-family: 'Inter', sans-serif; overflow-x: hidden; color: #fff; }
+
+        .fd-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.3); backdrop-filter: blur(20px); }
+        .fd-header .back-link { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.6); text-decoration: none; transition: color 0.2s; font-size: 0.9rem; }
+        .fd-header .back-link:hover { color: #fff; }
+        .fd-header .title-group { display: flex; align-items: center; gap: 12px; }
+        .fd-header .title-icon { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #7c3aed, #ec4899); display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 15px rgba(124,58,237,0.4); }
+        .fd-header h1 { font-size: 1.3rem; font-weight: 700; }
+        .fd-status { display: flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; background: rgba(107,114,128,0.15); border: 1px solid rgba(107,114,128,0.3); color: #9ca3af; }
+        .fd-status .dot { width: 8px; height: 8px; border-radius: 50%; background: #6b7280; }
+
+        .fd-main { max-width: 1060px; margin: 0 auto; padding: 24px 20px; }
+        .fd-intro { text-align: center; margin-bottom: 20px; }
+        .fd-intro h2 { font-size: 1.6rem; font-weight: 800; margin-bottom: 6px; }
+        .fd-intro p { color: rgba(255,255,255,0.5); font-size: 0.9rem; }
+
+        .legend-bar { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 0 auto 16px; max-width: 700px; }
+        .legend-chip { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+        .legend-chip .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .legend-chip span { color: rgba(255,255,255,0.7); font-size: 0.8rem; font-weight: 500; }
+
+        .cam-area { position: relative; width: 100%; max-width: 960px; aspect-ratio: 4/3; margin: 0 auto; border-radius: 14px; overflow: visible; background: #000; box-shadow: 0 20px 60px rgba(0,0,0,0.45); }
+        .cam-area video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .cam-area canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+        .cam-area .finger-info { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.6); font-size: 0.72rem; padding: 5px 9px; border-radius: 7px; backdrop-filter: blur(8px); display: none; color: #fff; }
+
+        .start-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.75); z-index: 10; }
+        .start-overlay .icon { font-size: 3rem; margin-bottom: 12px; }
+        .start-overlay p { color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-bottom: 20px; }
+        .start-overlay button { padding: 14px 32px; border-radius: 14px; border: none; background: linear-gradient(135deg, #7c3aed, #ec4899); color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer; box-shadow: 0 8px 30px rgba(124,58,237,0.4); transition: transform 0.2s; }
+        .start-overlay button:hover { transform: scale(1.05); }
+        .start-overlay button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .fd-tips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 28px; }
+        @media (max-width: 700px) { .fd-tips { grid-template-columns: 1fr; } }
+        .fd-tip { padding: 18px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+        .fd-tip .tip-icon { font-size: 1.4rem; margin-bottom: 6px; }
+        .fd-tip h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
+        .fd-tip p { color: rgba(255,255,255,0.5); font-size: 0.78rem; line-height: 1.5; }
+
+        .fd-blob { position: fixed; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: -1; }
+        .fd-blob-1 { width: 380px; height: 380px; background: rgba(124,58,237,0.14); top: -80px; right: -80px; animation: bfloat 8s ease-in-out infinite; }
+        .fd-blob-2 { width: 320px; height: 320px; background: rgba(59,130,246,0.1); top: 50%; left: -80px; animation: bfloat 10s ease-in-out infinite 1s; }
+        .fd-blob-3 { width: 280px; height: 280px; background: rgba(236,72,153,0.1); bottom: -40px; right: 20%; animation: bfloat 12s ease-in-out infinite 2s; }
+        @keyframes bfloat { 0%,100%{transform:translate(0,0)} 50%{transform:translate(25px,-18px)} }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    </style>
+</head>
+<body>
+    <div class="fd-blob fd-blob-1"></div>
+    <div class="fd-blob fd-blob-2"></div>
+    <div class="fd-blob fd-blob-3"></div>
+
+    <header class="fd-header">
+        <a href="instruments.html" class="back-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg>
+            Back
+        </a>
+        <div class="title-group">
+            <div class="title-icon">🥁</div>
+            <h1>Finger Drums</h1>
+        </div>
+        <div class="fd-status" id="cam-status">
+            <span class="dot" id="cam-dot"></span>
+            <span id="cam-label">Camera Off</span>
+        </div>
+    </header>
+
+    <main class="fd-main">
+        <div class="fd-intro">
+            <h2>Play Drums with Your Index Fingers!</h2>
+            <p>Point with your index fingers and push them into the drum pads. Hold to repeat. Swipe past pads without triggering them.</p>
+        </div>
+
+        <div class="legend-bar" id="legend-bar"></div>
+
+        <div class="cam-area" id="cam-area">
+            <video id="cam-video" playsinline muted></video>
+            <canvas id="overlay"></canvas>
+            <div class="finger-info" id="finger-info"></div>
+            <div class="start-overlay" id="start-overlay">
+                <div class="icon">📷</div>
+                <p>We need your camera to track your hands. Video stays local.</p>
+                <button id="start-btn">Start Camera &amp; Play</button>
+            </div>
+        </div>
+
+        <div class="fd-tips">
+            <div class="fd-tip"><div class="tip-icon">☝️</div><h4>Index Fingers Only</h4><p>Only your left and right index fingertips are tracked for precise pad hits.</p></div>
+            <div class="fd-tip"><div class="tip-icon">🔁</div><h4>Hold to Repeat</h4><p>Keep your finger in a pad for a steady beat. It auto-repeats after a short pause.</p></div>
+            <div class="fd-tip"><div class="tip-icon">💨</div><h4>Swipe Through</h4><p>Move fast to skip over pads in the middle — only slow/stopped fingers trigger sounds.</p></div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.min.js"></script>
+    <script src="finger-drums-engine.js"></script>
+    <script>
+        FingerDrumsEngine.init('cam-video', 'overlay', 'start-btn', 'start-overlay', 'finger-info', 'legend-bar', null, 'cam-dot', 'cam-label');
+    </script>
+</body>
+</html>

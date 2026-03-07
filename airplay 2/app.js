@@ -1,3 +1,8 @@
+// Jam Session: use page host so it works on same machine (localhost) or from another (host IP)
+const JAM_HOST = (typeof window !== 'undefined' && window.location && window.location.hostname) ? window.location.hostname : 'localhost';
+const JAM_SESSION_WS_URL = 'ws://' + JAM_HOST + ':8502';
+const JAM_SESSION_HTTP_URL = 'http://' + JAM_HOST + ':8502';
+
 // Predefined Songs for Practice Mode
 const pianoSongs = {
     'twinkle': [
@@ -65,6 +70,45 @@ const pianoSongs = {
         { note: 'A', octave: 4, timing: 1500 },
         { note: 'B', octave: 4, timing: 1800 },
         { note: 'C', octave: 5, timing: 2100 }
+    ],
+    'shape-of-you': [
+        // A C D C A A C C
+        { note: 'A', octave: 4, timing: 0 },
+        { note: 'C', octave: 4, timing: 400 },
+        { note: 'D', octave: 4, timing: 800 },
+        { note: 'C', octave: 4, timing: 1200 },
+        { note: 'A', octave: 4, timing: 1600 },
+        { note: 'A', octave: 4, timing: 2000 },
+        { note: 'C', octave: 4, timing: 2400 },
+        { note: 'C', octave: 4, timing: 2800 },
+        // A C D D C A A C G
+        { note: 'A', octave: 4, timing: 3200 },
+        { note: 'C', octave: 4, timing: 3600 },
+        { note: 'D', octave: 4, timing: 4000 },
+        { note: 'D', octave: 4, timing: 4400 },
+        { note: 'C', octave: 4, timing: 4800 },
+        { note: 'A', octave: 4, timing: 5200 },
+        { note: 'A', octave: 4, timing: 5600 },
+        { note: 'C', octave: 4, timing: 6000 },
+        { note: 'G', octave: 4, timing: 6400 },
+        // A C D D C A A C G
+        { note: 'A', octave: 4, timing: 6800 },
+        { note: 'C', octave: 4, timing: 7200 },
+        { note: 'D', octave: 4, timing: 7600 },
+        { note: 'D', octave: 4, timing: 8000 },
+        { note: 'C', octave: 4, timing: 8400 },
+        { note: 'A', octave: 4, timing: 8800 },
+        { note: 'A', octave: 4, timing: 9200 },
+        { note: 'C', octave: 4, timing: 9600 },
+        { note: 'G', octave: 4, timing: 10000 },
+        // E D C A C A G
+        { note: 'E', octave: 4, timing: 10400 },
+        { note: 'D', octave: 4, timing: 10800 },
+        { note: 'C', octave: 4, timing: 11200 },
+        { note: 'A', octave: 4, timing: 11600 },
+        { note: 'C', octave: 4, timing: 12000 },
+        { note: 'A', octave: 4, timing: 12400 },
+        { note: 'G', octave: 4, timing: 12800 }
     ]
 };
 
@@ -228,22 +272,130 @@ class CursorTrail {
 // Initialize cursor trail
 const cursorTrail = new CursorTrail('cursor-trail');
 
+// --- Jam Session (WebSocket multiplayer) ---
+let jamSessionManager = null;
+
+class JamSessionManager {
+    constructor() {
+        this.ws = null;
+        this.roomId = null;
+        this.playerId = null;
+        this.instrument = null;
+        this.onRemoteNote = null; // (payload) => {}
+    }
+
+    get connected() {
+        return this.ws && this.ws.readyState === WebSocket.OPEN;
+    }
+
+    connect(roomId, playerId, instrument) {
+        this.disconnect();
+        roomId = (roomId || '').trim().toUpperCase();
+        playerId = (playerId || '').trim() || 'player_' + Math.random().toString(36).slice(2, 8);
+        const base = JAM_SESSION_WS_URL.replace(/\/$/, '');
+        const wsUrl = `${base}/ws/${encodeURIComponent(roomId)}/${encodeURIComponent(playerId)}`;
+        this.ws = new WebSocket(wsUrl);
+        this.roomId = roomId;
+        this.playerId = playerId;
+        this.instrument = instrument || 'piano';
+
+        this.ws.onopen = () => {
+            console.log('[Jam] Connected to room', roomId, 'as', playerId);
+        };
+        this.ws.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'note' && msg.player_id !== this.playerId && this.onRemoteNote) {
+                    this.onRemoteNote(msg);
+                }
+            } catch (e) {
+                console.warn('[Jam] Invalid message', e);
+            }
+        };
+        this.ws.onclose = () => {
+            console.log('[Jam] Disconnected');
+        };
+        this.ws.onerror = (err) => {
+            console.warn('[Jam] WebSocket error', err);
+        };
+    }
+
+    sendNote(note, velocity = 0.8) {
+        if (!this.connected || !this.roomId || !this.playerId) return;
+        const payload = {
+            type: 'note',
+            room_id: this.roomId,
+            player_id: this.playerId,
+            instrument: this.instrument,
+            note: note,
+            velocity: velocity,
+            ts: Date.now() / 1000
+        };
+        this.ws.send(JSON.stringify(payload));
+    }
+
+    disconnect() {
+        if (this.ws) {
+            try { this.ws.close(); } catch (e) { }
+            this.ws = null;
+        }
+        this.roomId = null;
+        this.playerId = null;
+    }
+}
+
+// Play a short tone for remote jam notes (no sample files)
+function playRemoteNoteSound(note, instrument, velocity) {
+    try {
+        const ctx = window.jamAudioContext || (window.jamAudioContext = new (window.AudioContext || window.webkitAudioContext)());
+        const gain = (velocity || 0.8) * 0.15;
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.connect(g);
+        g.connect(ctx.destination);
+        if (instrument === 'piano') {
+            const freqMap = { C: 262, D: 294, E: 330, F: 349, G: 392, A: 440, B: 494 };
+            const letter = (note || 'C').toString().replace(/\d/g, '').charAt(0).toUpperCase();
+            const oct = parseInt((note || '4').toString().replace(/\D/g, ''), 10) || 4;
+            let f = freqMap[letter] || 262;
+            f *= Math.pow(2, oct - 4);
+            osc.frequency.value = f;
+            osc.type = 'sine';
+        } else {
+            osc.frequency.value = 150 + Math.random() * 100;
+            osc.type = 'square';
+        }
+        g.gain.setValueAtTime(gain, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.15);
+    } catch (e) {
+        console.warn('[Jam] Remote sound failed', e);
+    }
+}
+
 // Page Navigation
 let currentInstrument = null;
 let currentMode = null;
 
 const pages = {
-    landing: document.getElementById('landing-page'),
+    landing: document.getElementById('landing-page') || document.getElementById('instruments-page'),
+    'instruments-page': document.getElementById('instruments-page'),
     'camera-setup': document.getElementById('camera-setup'),
     'practice-question': document.getElementById('practice-question'),
     'piano-composer': document.getElementById('piano-composer'),
     'piano-practice': document.getElementById('piano-practice'),
     'drums-composer': document.getElementById('drums-composer'),
-    'drums-practice': document.getElementById('drums-practice')
+    'drums-practice': document.getElementById('drums-practice'),
+    'jam-setup': document.getElementById('jam-setup'),
+    'jam-piano': document.getElementById('jam-piano'),
+    'jam-drums': document.getElementById('jam-drums')
 };
 
 function showPage(pageId) {
-    Object.values(pages).forEach(page => page.classList.remove('active'));
+    Object.values(pages).forEach(page => {
+        if (page) page.classList.remove('active');
+    });
     if (pages[pageId]) {
         pages[pageId].classList.add('active');
     }
@@ -496,11 +648,6 @@ function showCameraSetupPage() {
     }, 200);
 }
 
-// Keep old function for compatibility but redirect
-function showHeroCameraPreview() {
-    // Redirect to camera setup instead
-    showCameraSetupPage();
-}
 
 let heroCameraStream = null;
 
@@ -675,7 +822,34 @@ class PianoNoteManager {
                 ...note,
                 noteKey: `${note.note}${note.octave}`
             }));
+            this.currentSheetNotes = null;
         }
+    }
+
+    /** Set song from unified API format: notes = [{ t, note, dur }, ...]. */
+    setSongNotes(notes, songId) {
+        if (!this.isPractice || !notes || !notes.length) return;
+        this.selectedSong = songId || 'imported';
+        this.currentSheetNotes = notes;
+        this.songNotes = notes.map(n => {
+            const noteStr = (n.note || '').toString().trim();
+            let note = 'C', octave = 4, noteKey = 'C4';
+            const match = noteStr.match(/^([A-G]#?b?)(\d+)$/i);
+            if (match) {
+                note = match[1].replace(/b/i, 'b');
+                octave = parseInt(match[2], 10);
+                noteKey = note + octave;
+            } else if (noteStr.length >= 1) {
+                note = noteStr[0].toUpperCase() + (noteStr.slice(1) || '');
+                noteKey = noteStr.length > 1 ? noteStr : note + '4';
+            }
+            return {
+                note,
+                octave,
+                timing: (n.t != null ? n.t : 0) * 1000,
+                noteKey
+            };
+        });
     }
 
     startGeneratingNotes() {
@@ -1151,17 +1325,269 @@ function initPianoPractice() {
         if (songSelect) {
             songSelect.addEventListener('change', (e) => {
                 const songId = e.target.value;
-                if (songId && pianoNoteManager) {
+                if (!songId) return;
+                if (pianoSongs[songId] && pianoNoteManager) {
                     pianoNoteManager.setSong(songId);
-                    // Reset and prepare for new song
+                    updateSheetMusicFromManager(pianoNoteManager);
                     if (pianoNoteManager.playing) {
                         pianoNoteManager.stop();
                         pianoNoteManager.play();
                     }
+                    return;
+                }
+                if (typeof SheetRenderer !== 'undefined' && SheetRenderer.fetchSong && pianoNoteManager) {
+                    SheetRenderer.fetchSong(songId, (data) => {
+                        if (data && data.notes && pianoNoteManager) {
+                            pianoNoteManager.setSongNotes(data.notes, songId);
+                            updateSheetMusicFromManager(pianoNoteManager);
+                            if (pianoNoteManager.playing) {
+                                pianoNoteManager.stop();
+                                pianoNoteManager.play();
+                            }
+                        }
+                    });
                 }
             });
         }
+
+        // Populate API songs in dropdown
+        if (typeof SheetRenderer !== 'undefined' && SheetRenderer.fetchSongList) {
+            SheetRenderer.fetchSongList((apiSongs) => {
+                if (!apiSongs.length || !songSelect) return;
+                apiSongs.forEach(s => {
+                    if (songSelect.querySelector('option[value="' + s.id + '"]')) return;
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.label + ' (imported)';
+                    songSelect.appendChild(opt);
+                });
+            });
+        }
+
+        // Multiplayer room
+        const roomInput = document.getElementById('multiplayer-room-input');
+        const joinBtn = document.getElementById('multiplayer-join-btn');
+        const createBtn = document.getElementById('multiplayer-create-btn');
+        const spectatorBtn = document.getElementById('multiplayer-spectator-btn');
+        const multiplayerStatus = document.getElementById('multiplayer-status');
+        if (joinBtn && roomInput) {
+            joinBtn.addEventListener('click', () => {
+                AirJamMultiplayer.joinRoom(roomInput.value, (ok) => {
+                    if (multiplayerStatus) multiplayerStatus.textContent = ok ? 'Joined ' + AirJamMultiplayer.roomId : 'Join failed';
+                });
+            });
+        }
+        if (createBtn) {
+            createBtn.addEventListener('click', () => {
+                AirJamMultiplayer.createRoom((ok) => {
+                    if (multiplayerStatus) multiplayerStatus.textContent = ok ? 'Room ' + AirJamMultiplayer.roomId : 'Create failed';
+                    if (roomInput && AirJamMultiplayer.roomId) roomInput.value = AirJamMultiplayer.roomId;
+                });
+            });
+        }
+        if (spectatorBtn) {
+            spectatorBtn.addEventListener('click', () => {
+                if (AirJamMultiplayer.copySpectatorLink() && multiplayerStatus) {
+                    multiplayerStatus.textContent = 'Link copied!';
+                    setTimeout(() => { multiplayerStatus.textContent = ''; }, 2000);
+                } else if (multiplayerStatus) multiplayerStatus.textContent = 'Join a room first';
+            });
+        }
+
+        // MP3 upload
+        const mp3Input = document.getElementById('mp3-upload-input');
+        const mp3Btn = document.getElementById('upload-mp3-btn');
+        const mp3Status = document.getElementById('upload-mp3-status');
+        if (mp3Btn && mp3Input) {
+            mp3Btn.addEventListener('click', () => mp3Input.click());
+            mp3Input.addEventListener('change', function () {
+                const file = this.files && this.files[0];
+                if (!file || !file.name.toLowerCase().endsWith('.mp3')) {
+                    if (mp3Status) mp3Status.textContent = 'Choose an MP3 file.';
+                    return;
+                }
+                if (mp3Status) mp3Status.textContent = 'Uploading...';
+                const fd = new FormData();
+                fd.append('file', file);
+                const api = (typeof SheetRenderer !== 'undefined' && SheetRenderer.MUSIC_API) ? SheetRenderer.MUSIC_API : 'http://localhost:8766';
+                fetch(api + '/api/upload-mp3', { method: 'POST', body: fd })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.error) {
+                            if (mp3Status) mp3Status.textContent = 'Error: ' + data.error;
+                            return;
+                        }
+                        if (mp3Status) mp3Status.textContent = 'Imported: ' + (data.note_count || 0) + ' notes';
+                        if (songSelect && data.song_id) {
+                            let opt = songSelect.querySelector('option[value="' + data.song_id + '"]');
+                            if (!opt) {
+                                opt = document.createElement('option');
+                                opt.value = data.song_id;
+                                opt.textContent = (data.song_id || 'imported') + ' (MP3)';
+                                songSelect.appendChild(opt);
+                            }
+                            songSelect.value = data.song_id;
+                            if (pianoNoteManager && data.notes) {
+                                pianoNoteManager.setSongNotes(data.notes, data.song_id);
+                                updateSheetMusicFromManager(pianoNoteManager);
+                            }
+                        }
+                    })
+                    .catch(() => { if (mp3Status) mp3Status.textContent = 'Upload failed'; });
+            });
+        }
+
+        // MIDI upload — with track analysis & piano extraction
+        const midiInput = document.getElementById('midi-upload-input');
+        const midiBtn = document.getElementById('upload-midi-btn');
+        const midiStatus = document.getElementById('upload-midi-status');
+        const musicApi = (typeof SheetRenderer !== 'undefined' && SheetRenderer.MUSIC_API) ? SheetRenderer.MUSIC_API : 'http://localhost:8766';
+        const _tpOverlay = document.getElementById('midiTrackPickerOverlay');
+        const _tpList = document.getElementById('midiTrackList');
+        const _tpCancel = document.getElementById('midiTrackPickerCancel');
+
+        function _midiLoadNotes(data) {
+            if (midiStatus) midiStatus.textContent = 'Loaded: ' + (data.note_count || 0) + ' notes';
+            if (songSelect && data.song_id) {
+                let opt = songSelect.querySelector('option[value="' + data.song_id + '"]');
+                if (!opt) {
+                    opt = document.createElement('option');
+                    opt.value = data.song_id;
+                    opt.textContent = (data.song_id || 'imported').replace(/_/g, ' ') + ' (imported)';
+                    songSelect.appendChild(opt);
+                }
+                songSelect.value = data.song_id;
+                if (pianoNoteManager && data.notes) {
+                    pianoNoteManager.setSongNotes(data.notes, data.song_id);
+                    updateSheetMusicFromManager(pianoNoteManager);
+                }
+            }
+        }
+
+        function _extractTrack(midiId, opts) {
+            if (_tpOverlay) _tpOverlay.style.display = 'none';
+            if (midiStatus) midiStatus.textContent = 'Extracting...';
+            fetch(musicApi + '/api/extract-track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(Object.assign({ midi_id: midiId }, opts)),
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data.success) { if (midiStatus) midiStatus.textContent = 'Error: ' + (data.error || ''); return; }
+                    _midiLoadNotes(data);
+                })
+                .catch(function () { if (midiStatus) midiStatus.textContent = 'Extract failed'; });
+        }
+
+        function _showTrackPicker(midiId, tracks) {
+            if (!_tpOverlay || !_tpList) return;
+            _tpList.innerHTML = '';
+
+            var hasPiano = tracks.some(function (t) { return t.family === 'piano' && !t.is_drum; });
+
+            // "Piano Only" button — prominent if available
+            if (hasPiano) {
+                var pianoCount = tracks.filter(function (t) { return t.family === 'piano' && !t.is_drum; })
+                    .reduce(function (s, t) { return s + t.note_count; }, 0);
+                var pb = document.createElement('button');
+                pb.style.cssText = 'width:100%;text-align:left;padding:12px 16px;background:rgba(0,255,136,0.15);border:1px solid rgba(0,255,136,0.4);border-radius:10px;color:#fff;cursor:pointer;font-size:0.9rem;font-family:Inter,sans-serif;';
+                pb.innerHTML = '<strong style="color:#00ff88;">Piano Only</strong><br><span style="color:#888;font-size:0.8rem;">Extracts only piano tracks (' + pianoCount + ' notes)</span>';
+                pb.onclick = function () { _extractTrack(midiId, { family: 'piano' }); };
+                _tpList.appendChild(pb);
+            }
+
+            // "All Tracks" option
+            var allCount = tracks.reduce(function (s, t) { return s + (t.is_drum ? 0 : t.note_count); }, 0);
+            var ab = document.createElement('button');
+            ab.style.cssText = 'width:100%;text-align:left;padding:12px 16px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);border-radius:10px;color:#fff;cursor:pointer;font-size:0.9rem;font-family:Inter,sans-serif;';
+            ab.innerHTML = '<strong style="color:#00ff88;">All Tracks</strong><br><span style="color:#888;font-size:0.8rem;">All non-drum instruments combined (' + allCount + ' notes)</span>';
+            ab.onclick = function () { _extractTrack(midiId, {}); };
+            _tpList.appendChild(ab);
+
+            // Individual tracks
+            tracks.forEach(function (t) {
+                if (t.is_drum) return;
+                var btn = document.createElement('button');
+                btn.style.cssText = 'width:100%;text-align:left;padding:12px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;cursor:pointer;font-size:0.9rem;font-family:Inter,sans-serif;';
+                var badge = t.family === 'piano' ? ' <span style="color:#00ff88;">[Piano]</span>' : '';
+                btn.innerHTML = '<strong>' + (t.name || t.program_name) + badge + '</strong><br><span style="color:#888;font-size:0.8rem;">' + t.program_name + ' — ' + t.note_count + ' notes</span>';
+                btn.onclick = function () { _extractTrack(midiId, { track_index: t.index }); };
+                _tpList.appendChild(btn);
+            });
+
+            _tpOverlay.style.display = 'flex';
+        }
+
+        if (_tpCancel) {
+            _tpCancel.addEventListener('click', function () {
+                if (_tpOverlay) _tpOverlay.style.display = 'none';
+                if (midiStatus) midiStatus.textContent = '';
+            });
+        }
+
+        if (midiBtn && midiInput) {
+            midiBtn.addEventListener('click', () => midiInput.click());
+            midiInput.addEventListener('change', function () {
+                const file = this.files && this.files[0];
+                if (!file || !/\.(mid|midi)$/i.test(file.name)) {
+                    if (midiStatus) midiStatus.textContent = 'Choose a .mid or .midi file.';
+                    return;
+                }
+                if (midiStatus) midiStatus.textContent = 'Analyzing tracks...';
+                const fd = new FormData();
+                fd.append('file', file);
+                fetch(musicApi + '/api/upload-midi-analyze', { method: 'POST', body: fd })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.success) {
+                            if (midiStatus) midiStatus.textContent = 'Error: ' + (data.error || 'parse failed');
+                            return;
+                        }
+                        var nonDrum = data.tracks.filter(function (t) { return !t.is_drum; });
+                        var pianoTracks = nonDrum.filter(function (t) { return t.family === 'piano'; });
+
+                        // If only piano tracks exist, auto-extract them
+                        if (pianoTracks.length > 0 && pianoTracks.length === nonDrum.length) {
+                            _extractTrack(data.midi_id, { family: 'piano' });
+                        } else if (nonDrum.length === 1) {
+                            _extractTrack(data.midi_id, { track_index: nonDrum[0].index });
+                        } else {
+                            _showTrackPicker(data.midi_id, data.tracks);
+                        }
+                    })
+                    .catch(() => { if (midiStatus) midiStatus.textContent = 'Upload failed'; });
+                this.value = '';
+            });
+        }
+
+        // Sheet music toggle
+        const sheetToggle = document.getElementById('sheet-toggle-btn');
+        const sheetContainer = document.getElementById('sheet-music-container');
+        if (sheetToggle && sheetContainer) {
+            sheetToggle.addEventListener('click', () => {
+                const show = sheetContainer.style.display !== 'none';
+                sheetContainer.style.display = show ? 'none' : 'block';
+                sheetToggle.textContent = show ? 'Show staff' : 'Hide staff';
+                if (!show && pianoNoteManager) updateSheetMusicFromManager(pianoNoteManager);
+            });
+        }
     }, 100);
+}
+
+function updateSheetMusicFromManager(manager) {
+    if (typeof SheetRenderer === 'undefined' || !SheetRenderer.renderSheetMusic) return;
+    const container = document.getElementById('sheet-music-inner');
+    if (!container) return;
+    let notes = manager.currentSheetNotes;
+    if (!notes && manager.songNotes && manager.songNotes.length) {
+        notes = manager.songNotes.map(n => ({
+            t: (n.timing || 0) / 1000,
+            note: n.noteKey || (n.note + '' + n.octave),
+            dur: 0.5
+        }));
+    }
+    SheetRenderer.renderSheetMusic('sheet-music-inner', notes || [], { bpm: 120 });
 }
 
 // Enhanced Drums Note Manager
@@ -1586,6 +2012,281 @@ function initDrumsPractice() {
             drumsNoteManager.setTempo(tempo);
         }
     });
+}
+
+// --- Multiplayer (WebSocket + postMessage) ---
+const AirJamMultiplayer = {
+    WS_BASE: 'ws://localhost:8765',
+    API_BASE: 'http://localhost:8766',
+    roomId: null,
+    senderId: null,
+    ws: null,
+    instrument: 'piano',
+
+    createSenderId() {
+        return 's' + Math.random().toString(36).slice(2, 10);
+    },
+
+    createRoom(cb) {
+        fetch(this.API_BASE + '/api/create-room', { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.room_id) {
+                    this.roomId = data.room_id;
+                    this.senderId = this.senderId || this.createSenderId();
+                    this.connectWs(cb);
+                }
+            })
+            .catch(err => console.error('Create room failed', err));
+    },
+
+    joinRoom(roomId, cb) {
+        const id = (roomId || '').trim().toUpperCase();
+        if (!id || id.length > 20) return;
+        this.roomId = id;
+        this.senderId = this.senderId || this.createSenderId();
+        this.connectWs(cb);
+    },
+
+    connectWs(cb) {
+        if (this.ws) {
+            try { this.ws.close(); } catch (e) { }
+            this.ws = null;
+        }
+        if (!this.roomId) return;
+        const url = this.WS_BASE + '/ws/' + encodeURIComponent(this.roomId);
+        this.ws = new WebSocket(url);
+        this.ws.onopen = () => { if (cb) cb(true); };
+        this.ws.onclose = () => { if (cb) cb(false); };
+        this.ws.onerror = () => { if (cb) cb(false); };
+        this.ws.onmessage = (e) => {
+            try {
+                const d = JSON.parse(e.data);
+                if (d.type === 'NOTE_PLAYED') this.onNoteFromNetwork(d.note, d.velocity, d.instrument || 'piano');
+            } catch (err) { }
+        };
+    },
+
+    sendNote(note, velocity, instrument) {
+        const inst = instrument || this.instrument;
+        const payload = {
+            type: 'NOTE_PLAYED',
+            room_id: this.roomId,
+            sender_id: this.senderId,
+            instrument: inst,
+            note: note,
+            velocity: velocity != null ? velocity : 0.8,
+            timestamp_ms: Date.now()
+        };
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify(payload));
+            return;
+        }
+        fetch(this.API_BASE + '/api/note', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).catch(err => console.error('POST /api/note failed', err));
+    },
+
+    onNoteFromNetwork(note, velocity, instrument) {
+        const n = (note || '').toString().trim();
+        if (!n) return;
+        const noteKey = n.length >= 2 && /\d/.test(n) ? n : n + '4';
+        if (pianoNoteManager && typeof pianoNoteManager.triggerKeyPress === 'function') {
+            pianoNoteManager.triggerKeyPress(noteKey);
+        }
+    },
+
+    copySpectatorLink() {
+        if (!this.roomId) return false;
+        const base = window.location.href.split('?')[0].replace(/\/[^/]*$/, '');
+        const url = base + '/spectator.html?room=' + this.roomId;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(() => { }).catch(() => { });
+            return true;
+        }
+        return false;
+    }
+};
+
+window.addEventListener('message', function (e) {
+    const d = e.data;
+    if (!d || (d.type !== 'notePlayed' && d.type !== 'NOTE_PLAYED')) return;
+    const note = (d.note || '').toString().trim();
+    const velocity = typeof d.velocity === 'number' ? d.velocity : 0.8;
+    if (!note) return;
+
+    // Existing AirJamMultiplayer (keep it)
+    if (typeof AirJamMultiplayer !== 'undefined') {
+        AirJamMultiplayer.onNoteFromNetwork(note.toUpperCase() + '4', velocity, 'piano');
+        if (AirJamMultiplayer.roomId) {
+            AirJamMultiplayer.sendNote(note.toUpperCase() + '4', velocity, 'piano');
+        }
+    }
+
+    // Forward to Jam WebSocket if in a jam room
+    if (typeof jamSessionManager !== 'undefined' && jamSessionManager && jamSessionManager.connected) {
+        jamSessionManager.sendNote(note, velocity);
+    }
+
+    // Local visual feedback
+    const keyContainer = document.getElementById('piano-practice-keys') || document.getElementById('piano-keys') || document.getElementById('jam-piano-keys');
+    if (keyContainer) {
+        const noteKey = note.length >= 2 ? note : (note.charAt(0).toUpperCase() + '4');
+        const keyEl = keyContainer.querySelector(`[data-note="${noteKey}"]`) || keyContainer.querySelector(`[data-note="${note.charAt(0).toUpperCase()}4"]`);
+        if (keyEl) {
+            keyEl.classList.add('pressed');
+            setTimeout(() => keyEl.classList.remove('pressed'), 400);
+        }
+    }
+    const drumMap = { kick: 'bass1', snare: 'snare', hat: 'cymbal', tom: 'bass2' };
+    const drumKey = drumMap[note.toLowerCase()] || note.toLowerCase();
+    const drumEl = document.querySelector(`[data-drum="${drumKey}"]`);
+    if (drumEl) {
+        drumEl.classList.add('active');
+        setTimeout(() => drumEl.classList.remove('active'), 200);
+    }
+});
+
+// --- Jam Session: Host/Client flow (separate from piano/drums practice) ---
+let jamRoomId = null;
+
+function flashJamKey(note) {
+    const key = (note && note.length >= 2) ? note : (String(note).charAt(0).toUpperCase() + '4');
+    const el = document.querySelector('#jam-piano-keys [data-note="' + key + '"]') || document.querySelector('#jam-piano-keys [data-note="' + key.charAt(0) + '4"]');
+    if (el) {
+        el.classList.add('pressed');
+        setTimeout(() => el.classList.remove('pressed'), 400);
+    }
+}
+
+function flashJamDrum(drumName) {
+    const d = (drumName || '').toString().toUpperCase();
+    const drumMap = { KICK: 'bass1', HAT: 'cymbal', TOM: 'bass2', SNARE: 'snare' };
+    const drum = drumMap[d] || drumName;
+    const el = document.querySelector('#jam-drum-pads [data-drum="' + drum + '"]');
+    if (el) {
+        el.classList.add('active');
+        setTimeout(() => el.classList.remove('active'), 200);
+    }
+}
+
+function initJamSetup() {
+    const hostBtn = document.getElementById('jam-host-btn');
+    const joinBtn = document.getElementById('jam-join-btn');
+    const joinInput = document.getElementById('jam-client-code-input');
+    const connectedDiv = document.getElementById('jam-connected');
+    const codeEl = document.getElementById('jam-host-code');
+    const labelEl = document.getElementById('jam-connected-label');
+    const pickPianoBtn = document.getElementById('jam-pick-piano-btn');
+    const pickDrumsBtn = document.getElementById('jam-pick-drums-btn');
+
+    if (typeof jamSessionManager === 'undefined' || !jamSessionManager) {
+        jamSessionManager = new JamSessionManager();
+    }
+
+    function showConnected(roomId, isHost) {
+        jamRoomId = roomId;
+        if (connectedDiv) connectedDiv.classList.remove('hidden');
+        if (codeEl) codeEl.textContent = roomId || '';
+        if (labelEl) labelEl.textContent = isHost ? 'Share this code with your partner:' : 'Connected to room:';
+    }
+
+    if (hostBtn) {
+        hostBtn.addEventListener('click', () => {
+            fetch(JAM_SESSION_HTTP_URL + '/create_room', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    const roomId = (data.room_id || '').trim().toUpperCase();
+                    if (!roomId) return;
+                    showConnected(roomId, true);
+                })
+                .catch(e => {
+                    console.error('[Jam] Host failed', e);
+                    alert('Could not create room. Is the session server running on port 8502?');
+                });
+        });
+    }
+    if (joinBtn && joinInput) {
+        joinBtn.addEventListener('click', () => {
+            const roomId = (joinInput.value || '').trim().toUpperCase();
+            if (!roomId) {
+                alert('Please enter the 6-letter room code from your host.');
+                return;
+            }
+            showConnected(roomId, false);
+        });
+    }
+    if (pickPianoBtn) {
+        pickPianoBtn.addEventListener('click', () => {
+            if (!jamRoomId) return;
+            const playerId = 'piano_' + Math.random().toString(36).slice(2, 8);
+            jamSessionManager.connect(jamRoomId, playerId, 'piano');
+            jamSessionManager.onRemoteNote = (p) => {
+                playRemoteNoteSound(p.note, p.instrument, p.velocity);
+                if (p.instrument === 'piano') flashJamKey(p.note);
+                if (p.instrument === 'drums') flashJamDrum(p.note);
+            };
+            showPage('jam-piano');
+            initJamPiano();
+        });
+    }
+    if (pickDrumsBtn) {
+        pickDrumsBtn.addEventListener('click', () => {
+            if (!jamRoomId) return;
+            const playerId = 'drums_' + Math.random().toString(36).slice(2, 8);
+            jamSessionManager.connect(jamRoomId, playerId, 'drums');
+            jamSessionManager.onRemoteNote = (p) => {
+                playRemoteNoteSound(p.note, p.instrument, p.velocity);
+                if (p.instrument === 'piano') flashJamKey(p.note);
+                if (p.instrument === 'drums') flashJamDrum(p.note);
+            };
+            showPage('jam-drums');
+            initJamDrums();
+        });
+    }
+}
+
+function initJamPiano() {
+    if (typeof createPianoKeys === 'function') {
+        createPianoKeys('jam-piano-keys');
+    }
+    const badge = document.getElementById('jam-piano-room-badge');
+    if (badge && typeof jamSessionManager !== 'undefined' && jamSessionManager) {
+        badge.textContent = 'Room: ' + (jamSessionManager.roomId || '');
+    }
+    document.querySelectorAll('#jam-piano-keys .piano-key').forEach(key => {
+        key.addEventListener('click', () => {
+            const note = key.dataset.note;
+            if (typeof jamSessionManager !== 'undefined' && jamSessionManager && jamSessionManager.connected && note) {
+                jamSessionManager.sendNote(note, 0.8);
+            }
+        });
+    });
+}
+
+function initJamDrums() {
+    const badge = document.getElementById('jam-drums-room-badge');
+    if (badge && typeof jamSessionManager !== 'undefined' && jamSessionManager) {
+        badge.textContent = 'Room: ' + (jamSessionManager.roomId || '');
+    }
+    document.querySelectorAll('#jam-drum-pads .drum-pad').forEach(pad => {
+        pad.addEventListener('click', () => {
+            const drum = pad.dataset.drum;
+            if (typeof jamSessionManager !== 'undefined' && jamSessionManager && jamSessionManager.connected) {
+                jamSessionManager.sendNote(drum, 0.8);
+            }
+        });
+    });
+}
+
+function exitJamSession() {
+    if (typeof jamSessionManager !== 'undefined' && jamSessionManager) jamSessionManager.disconnect();
+    jamRoomId = null;
+    const connectedDiv = document.getElementById('jam-connected');
+    if (connectedDiv) connectedDiv.classList.add('hidden');
+    showPage('instruments-page');
 }
 
 // Initialize on page load

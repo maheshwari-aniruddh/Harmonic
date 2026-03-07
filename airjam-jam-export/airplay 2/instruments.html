@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Your Instrument - AirJam</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Geometric Shapes -->
+    <div class="geometric-shapes">
+        <div class="geo-shape geo-circle-1"></div>
+        <div class="geo-shape geo-circle-2"></div>
+        <div class="geo-shape geo-circle-3"></div>
+        <div class="geo-shape geo-triangle-1"></div>
+        <div class="geo-shape geo-triangle-2"></div>
+        <div class="geo-shape geo-hexagon-1"></div>
+        <div class="geo-shape geo-hexagon-2"></div>
+        <div class="geo-shape geo-square-1"></div>
+        <div class="geo-shape geo-square-2"></div>
+        <div class="geo-shape geo-pentagon-1"></div>
+        <div class="geo-shape geo-pentagon-2"></div>
+        <div class="geo-shape geo-octagon-1"></div>
+        <div class="geo-shape geo-diamond-1"></div>
+        <div class="geo-shape geo-diamond-2"></div>
+        <div class="geo-shape geo-line-1"></div>
+        <div class="geo-shape geo-line-2"></div>
+        <div class="geo-shape geo-line-3"></div>
+        <div class="geo-shape geo-line-4"></div>
+        <div class="geo-grid geo-grid-1"></div>
+        <div class="geo-grid geo-grid-2"></div>
+        <div class="geo-shape geo-spiral-1"></div>
+        <div class="geo-shape geo-spiral-2"></div>
+    </div>
+
+    <!-- Instruments Selection Page -->
+    <div id="instruments-page" class="page active">
+        <div class="landing-container">
+            <div class="instruments-header">
+                <a href="index.html" class="back-btn">
+                    <span class="back-arrow">←</span>
+                    <span>Back</span>
+                </a>
+            </div>
+
+            <div class="instrument-selector-wrapper">
+                <h2 class="selector-title">Choose Your Instrument</h2>
+                <div class="instrument-selector">
+                    <a href="piano.html" class="instrument-btn piano-btn">
+                        <div class="btn-glow"></div>
+                        <div class="btn-border"></div>
+                        <div class="btn-content">
+                            <div class="btn-animation">
+                                <div class="btn-keyboard">
+                                    <div class="keyboard-key"></div>
+                                    <div class="keyboard-key"></div>
+                                    <div class="keyboard-key"></div>
+                                    <div class="keyboard-key black-key"></div>
+                                    <div class="keyboard-key"></div>
+                                    <div class="keyboard-key black-key"></div>
+                                    <div class="keyboard-key"></div>
+                                </div>
+                            </div>
+                            <div class="btn-label">Piano</div>
+                            <div class="btn-desc">Classical elegance meets modern technology</div>
+                            <div class="btn-arrow">→</div>
+                        </div>
+                    </a>
+                    <a href="drums.html" class="instrument-btn drums-btn">
+                        <div class="btn-glow"></div>
+                        <div class="btn-border"></div>
+                        <div class="btn-content">
+                            <div class="btn-animation">
+                                <div class="drums-visual">
+                                    <div class="drum-circle drum-1"></div>
+                                    <div class="drum-circle drum-2"></div>
+                                    <div class="drum-circle drum-3"></div>
+                                    <div class="drum-circle drum-4"></div>
+                                </div>
+                            </div>
+                            <div class="btn-label">Drums</div>
+                            <div class="btn-desc">Rhythmic power at your fingertips</div>
+                            <div class="btn-arrow">→</div>
+                        </div>
+                    </a>
+                    <a href="#" class="instrument-btn jam-btn" id="jam-session-btn" onclick="event.preventDefault(); showPage('jam-setup'); if(typeof initJamSetup==='function')initJamSetup();">
+                        <div class="btn-glow"></div>
+                        <div class="btn-border"></div>
+                        <div class="btn-content">
+                            <div class="btn-animation">
+                                <div class="jam-visual">🎵</div>
+                            </div>
+                            <div class="btn-label">Jam Session</div>
+                            <div class="btn-desc">Host or join – play together in real time</div>
+                            <div class="btn-arrow">→</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div class="landing-footer">
+                <div class="feature-badge">
+                    <span class="badge-dot"></span>
+                    <span>Real-time camera tracking</span>
+                </div>
+                <div class="feature-badge">
+                    <span class="badge-dot"></span>
+                    <span>Precision detection</span>
+                </div>
+                <div class="feature-badge">
+                    <span class="badge-dot"></span>
+                    <span>Immersive visuals</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera Setup Page -->
+    <div id="camera-setup" class="page">
+        <div class="camera-setup-container">
+            <div class="camera-setup-header">
+                <button class="back-btn" onclick="goBackToLanding()">
+                    <span class="back-arrow">←</span>
+                    <span>Back</span>
+                </button>
+                <h2 class="camera-setup-title" id="camera-instrument-name">Camera Setup</h2>
+            </div>
+            <div class="camera-embed-container">
+                <div class="camera-status-indicator" id="camera-status-indicator">
+                    <div class="status-dot"></div>
+                    <span>Initializing Camera...</span>
+                </div>
+                <div class="video-wrapper">
+                    <video id="setup-camera-video" autoplay playsinline muted></video>
+                    <div class="video-placeholder" id="video-placeholder">
+                        <div class="placeholder-content">
+                            <div class="placeholder-icon">📹</div>
+                            <div class="placeholder-text">Camera Feed</div>
+                            <div class="placeholder-subtext">Requesting camera access...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="camera-overlay-info">
+                    <div class="setup-instruction">
+                        <h3>Position yourself in the frame</h3>
+                        <p>Make sure your hands are visible for gesture detection</p>
+                    </div>
+                </div>
+            </div>
+            <div class="camera-setup-actions">
+                <button class="setup-action-btn" id="composer-mode-btn">
+                    <div class="action-btn-content">
+                        <div class="action-icon">🎼</div>
+                        <div class="action-label">Composer Mode</div>
+                        <div class="action-desc">Create without camera overlay</div>
+                    </div>
+                </button>
+                <button class="setup-action-btn primary" id="practice-mode-btn">
+                    <div class="action-btn-content">
+                        <div class="action-icon">🎯</div>
+                        <div class="action-label">Practice Mode</div>
+                        <div class="action-desc">Practice with camera feedback</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Practice Question Page -->
+    <div id="practice-question" class="page">
+        <div class="practice-question-container">
+            <div class="question-header">
+                <button class="back-btn" onclick="goBack()">
+                    <span class="back-arrow">←</span>
+                    <span>Back</span>
+                </button>
+            </div>
+            <div class="question-content">
+                <h2 class="question-title">Do you want to practice?</h2>
+                <p class="question-subtitle" id="question-instrument">Practice with camera feedback</p>
+                <div class="question-buttons">
+                    <button class="question-btn yes-btn" id="practice-yes-btn">
+                        <div class="question-btn-glow"></div>
+                        <div class="question-btn-content">
+                            <div class="question-btn-label">Yes</div>
+                            <div class="question-btn-desc">Start practicing</div>
+                        </div>
+                    </button>
+                    <button class="question-btn no-btn" id="practice-no-btn">
+                        <div class="question-btn-glow"></div>
+                        <div class="question-btn-content">
+                            <div class="question-btn-label">No</div>
+                            <div class="question-btn-desc">Stay on landing</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Piano Composer Page -->
+    <div id="piano-composer" class="page">
+        <div class="piano-container">
+            <div class="controls-bar">
+                <div class="controls-left">
+                    <button class="back-btn" onclick="goToLanding()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <span>Back</span>
+                    </button>
+                    <div class="instrument-indicator">
+                        <div class="indicator-animation piano-indicator"></div>
+                        <span class="indicator-text">Piano - Composer Mode</span>
+                    </div>
+                </div>
+                <div class="controls-center">
+                    <div class="stats-display">
+                        <div class="stat-item">
+                            <span class="stat-label">Score</span>
+                            <span class="stat-value" id="piano-score">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Notes</span>
+                            <span class="stat-value" id="piano-notes-count">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="controls-right">
+                    <div class="tempo-control">
+                        <label class="tempo-label">Tempo</label>
+                        <input type="range" class="tempo-slider" id="piano-tempo" min="400" max="2000" value="800">
+                        <span class="tempo-value" id="piano-tempo-value">800ms</span>
+                    </div>
+                    <button class="play-btn" id="piano-play-btn">
+                        <span class="play-icon">▶</span>
+                        <span class="play-text">Play</span>
+                    </button>
+                </div>
+            </div>
+            <div class="piano-canvas-container" id="piano-canvas-container">
+                <div class="canvas-overlay">
+                    <div class="hit-indicator" id="piano-hit-indicator"></div>
+                </div>
+                <canvas id="piano-canvas"></canvas>
+            </div>
+            <div class="piano-keys" id="piano-keys"></div>
+        </div>
+    </div>
+
+    <!-- Piano Practice Page -->
+    <div id="piano-practice" class="page">
+        <div class="piano-container">
+            <div class="controls-bar">
+                <div class="controls-left">
+                    <button class="back-btn" onclick="goToLanding()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <span>Back</span>
+                    </button>
+                    <div class="instrument-indicator">
+                        <div class="indicator-animation piano-indicator"></div>
+                        <span class="indicator-text">Piano - Practice Mode</span>
+                    </div>
+                </div>
+                <div class="controls-center">
+                    <div class="stats-display">
+                        <div class="stat-item">
+                            <span class="stat-label">Score</span>
+                            <span class="stat-value" id="piano-practice-score">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Accuracy</span>
+                            <span class="stat-value" id="piano-accuracy">0%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Combo</span>
+                            <span class="stat-value combo-highlight" id="piano-combo">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="controls-right">
+                    <div class="song-selector">
+                        <label class="song-label">Song</label>
+                        <select class="song-select" id="piano-practice-song-select">
+                            <option value="">Select a song...</option>
+                            <option value="twinkle">Twinkle Twinkle Little Star</option>
+                            <option value="happy">Happy Birthday</option>
+                            <option value="mary">Mary Had a Little Lamb</option>
+                            <option value="fur-elise">Für Elise (Excerpt)</option>
+                            <option value="scale">C Major Scale</option>
+                            <option value="shape-of-you">Shape of You</option>
+                        </select>
+                    </div>
+                    <div class="upload-mp3-zone" id="upload-mp3-zone">
+                        <label class="song-label">Import MP3</label>
+                        <input type="file" id="mp3-upload-input" accept=".mp3" style="display:none">
+                        <button type="button" class="upload-mp3-btn" id="upload-mp3-btn">Choose MP3...</button>
+                        <span id="upload-mp3-status" class="upload-status"></span>
+                    </div>
+                    <div class="sheet-view-toggle">
+                        <label class="song-label">Sheet music</label>
+                        <button type="button" class="sheet-toggle-btn" id="sheet-toggle-btn">Show staff</button>
+                    </div>
+                    <div class="tempo-control">
+                        <label class="tempo-label">Tempo</label>
+                        <input type="range" class="tempo-slider" id="piano-practice-tempo" min="400" max="2000"
+                            value="800">
+                        <span class="tempo-value" id="piano-practice-tempo-value">800ms</span>
+                    </div>
+                    <button class="play-btn" id="piano-practice-play-btn">
+                        <span class="play-icon">▶</span>
+                        <span class="play-text">Play</span>
+                    </button>
+                </div>
+            </div>
+            <div class="camera-container">
+                <div class="camera-status" id="piano-camera-status">
+                    <div class="status-dot"></div>
+                    <span>AR Studio Active</span>
+                </div>
+                <!-- Embedded Streamlit AR Camera -->
+                <iframe id="piano-ar-embed" src="http://localhost:8501/?mode=piano&embed=true" class="ar-embed-frame"
+                    frameborder="0" allow="camera; microphone"
+                    style="width: 100%; height: 400px; border-radius: 12px;"></iframe>
+            </div>
+            <div class="piano-canvas-container" id="piano-canvas-container-practice" style="min-height: 200px;">
+                <canvas id="piano-practice-canvas"></canvas>
+            </div>
+            <div class="piano-keys" id="piano-practice-keys"></div>
+            <div id="sheet-music-container" class="sheet-music-container" style="display:none;">
+                <div id="sheet-music-inner"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drums Composer Page -->
+    <div id="drums-composer" class="page">
+        <div class="drums-container">
+            <div class="controls-bar">
+                <div class="controls-left">
+                    <button class="back-btn" onclick="goToLanding()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <span>Back</span>
+                    </button>
+                    <div class="instrument-indicator">
+                        <div class="indicator-animation drums-indicator"></div>
+                        <span class="indicator-text">Drums - Composer Mode</span>
+                    </div>
+                </div>
+                <div class="controls-center">
+                    <div class="stats-display">
+                        <div class="stat-item">
+                            <span class="stat-label">Score</span>
+                            <span class="stat-value" id="drums-score">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Beats</span>
+                            <span class="stat-value" id="drums-beats">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="controls-right">
+                    <div class="tempo-control">
+                        <label class="tempo-label">Tempo</label>
+                        <input type="range" class="tempo-slider" id="drums-tempo" min="500" max="2500" value="1000">
+                        <span class="tempo-value" id="drums-tempo-value">1000ms</span>
+                    </div>
+                    <button class="play-btn" id="drums-play-btn">
+                        <span class="play-icon">▶</span>
+                        <span class="play-text">Play</span>
+                    </button>
+                </div>
+            </div>
+            <div class="drums-content">
+                <div class="partition-panel">
+                    <div class="partition-header">
+                        <div class="partition-icon-animation"></div>
+                        <span>Partition</span>
+                    </div>
+                    <div class="partition-view" id="drums-partition">
+                        <div class="partition-empty">
+                            <div class="empty-animation">
+                                <div class="note-line"></div>
+                                <div class="note-line"></div>
+                                <div class="note-line"></div>
+                            </div>
+                            <p>Notes will appear here</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="drums-canvas-container">
+                    <canvas id="drums-canvas"></canvas>
+                </div>
+            </div>
+            <div class="drum-pads" id="drum-pads-composer">
+                <div class="drum-pad bass1-drum" data-drum="bass1">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Bass 1</div>
+                    <div class="drum-key-hint">B1</div>
+                </div>
+                <div class="drum-pad bass2-drum" data-drum="bass2">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Bass 2</div>
+                    <div class="drum-key-hint">B2</div>
+                </div>
+                <div class="drum-pad snare-drum" data-drum="snare">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Snare</div>
+                    <div class="drum-key-hint">S</div>
+                </div>
+                <div class="drum-pad cymbal" data-drum="cymbal">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Cymbal</div>
+                    <div class="drum-key-hint">C</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drums Practice Page -->
+    <div id="drums-practice" class="page">
+        <div class="drums-container">
+            <div class="controls-bar">
+                <div class="controls-left">
+                    <button class="back-btn" onclick="goToLanding()">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <span>Back</span>
+                    </button>
+                    <div class="instrument-indicator">
+                        <div class="indicator-animation drums-indicator"></div>
+                        <span class="indicator-text">Drums - Practice Mode</span>
+                    </div>
+                </div>
+                <div class="controls-center">
+                    <div class="stats-display">
+                        <div class="stat-item">
+                            <span class="stat-label">Score</span>
+                            <span class="stat-value" id="drums-practice-score">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Accuracy</span>
+                            <span class="stat-value" id="drums-accuracy">0%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Combo</span>
+                            <span class="stat-value combo-highlight" id="drums-combo">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="controls-right">
+                    <div class="tempo-control">
+                        <label class="tempo-label">Tempo</label>
+                        <input type="range" class="tempo-slider" id="drums-practice-tempo" min="500" max="2500"
+                            value="1000">
+                        <span class="tempo-value" id="drums-practice-tempo-value">1000ms</span>
+                    </div>
+                    <button class="play-btn" id="drums-practice-play-btn">
+                        <span class="play-icon">▶</span>
+                        <span class="play-text">Play</span>
+                    </button>
+                </div>
+            </div>
+            <div class="drums-content">
+                <div class="partition-panel">
+                    <div class="partition-header">
+                        <div class="partition-icon-animation"></div>
+                        <span>Partition</span>
+                    </div>
+                    <div class="partition-view" id="drums-partition-practice">
+                        <div class="partition-empty">
+                            <div class="empty-animation">
+                                <div class="note-line"></div>
+                                <div class="note-line"></div>
+                                <div class="note-line"></div>
+                            </div>
+                            <p>Notes will appear here</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="drums-canvas-container">
+                    <canvas id="drums-practice-canvas"></canvas>
+                </div>
+                <div class="camera-container">
+                    <div class="camera-status" id="drums-camera-status">
+                        <div class="status-dot"></div>
+                        <span>AR Studio Active</span>
+                    </div>
+                    <!-- Embedded Streamlit AR Camera -->
+                    <iframe id="drums-ar-embed" src="http://localhost:8501/?mode=drums&embed=true"
+                        class="ar-embed-frame" frameborder="0" allow="camera; microphone"
+                        style="width: 100%; height: 400px; border-radius: 12px;"></iframe>
+                </div>
+            </div>
+            <div class="drum-pads" id="drum-pads-practice">
+                <div class="drum-pad bass1-drum" data-drum="bass1">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Bass 1</div>
+                    <div class="drum-key-hint">B1</div>
+                </div>
+                <div class="drum-pad bass2-drum" data-drum="bass2">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Bass 2</div>
+                    <div class="drum-key-hint">B2</div>
+                </div>
+                <div class="drum-pad snare-drum" data-drum="snare">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Snare</div>
+                    <div class="drum-key-hint">S</div>
+                </div>
+                <div class="drum-pad cymbal" data-drum="cymbal">
+                    <div class="drum-inner"></div>
+                    <div class="drum-label">Cymbal</div>
+                    <div class="drum-key-hint">C</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jam Session: Host/Client Setup -->
+    <div id="jam-setup" class="page">
+        <div class="jam-setup-container">
+            <div class="jam-setup-header">
+                <button class="back-btn" onclick="goBackToLanding()">
+                    <span class="back-arrow">←</span>
+                    <span>Back</span>
+                </button>
+                <h2 class="jam-setup-title">Jam Session</h2>
+                <p class="jam-setup-subtitle">Play together in real time</p>
+            </div>
+            <div class="jam-role-selector">
+                <button class="jam-role-btn" id="jam-host-btn">
+                    <div class="jam-role-icon">🎛️</div>
+                    <div class="jam-role-label">Host Session</div>
+                    <div class="jam-role-desc">Create a room and share the code</div>
+                </button>
+                <div class="jam-role-divider">or</div>
+                <div class="jam-role-client">
+                    <label class="jam-role-label">Join a room</label>
+                    <p class="jam-role-desc">Enter the 6-letter code from your host</p>
+                    <div class="jam-join-row">
+                        <input type="text" class="jam-room-input" id="jam-client-code-input" placeholder="e.g. XJAM42" maxlength="6" autocomplete="off">
+                        <button type="button" class="jam-btn" id="jam-join-btn">Join room</button>
+                    </div>
+                </div>
+            </div>
+            <div id="jam-connected" class="jam-host-success hidden">
+                <p class="jam-code-label" id="jam-connected-label">Share this code with your partner:</p>
+                <p class="jam-code-value" id="jam-host-code"></p>
+                <p class="jam-instrument-prompt">Choose your instrument:</p>
+                <div class="jam-instrument-btns">
+                    <button type="button" class="jam-btn" id="jam-pick-piano-btn">Piano</button>
+                    <button type="button" class="jam-btn" id="jam-pick-drums-btn">Drums</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jam Session: Piano -->
+    <div id="jam-piano" class="page">
+        <div class="piano-container">
+            <div class="controls-bar">
+                <div class="controls-left">
+                    <button class="back-btn" onclick="exitJamSession()">
+                        <span class="back-arrow">←</span>
+                        <span>Leave Jam</span>
+                    </button>
+                    <div class="instrument-indicator">
+                        <div class="indicator-animation piano-indicator"></div>
+                        <span class="indicator-text">Jam - Piano</span>
+                    </div>
+                </div>
+                <div class="controls-center">
+                    <span class="jam-room-badge" id="jam-piano-room-badge"></span>
+                </div>
+            </div>
+            <div class="camera-container">
+                <div class="camera-status" id="jam-piano-camera-status">
+                    <div class="status-dot"></div>
+                    <span>AR Studio Active</span>
+                </div>
+                <iframe id="jam-piano-ar-embed" src="http://localhost:8501/?mode=piano&embed=true" class="ar-embed-frame"
+                    frameborder="0" allow="camera; microphone" style="width: 100%; height: 400px; border-radius: 12px;"></iframe>
+            </div>
+            <div class="piano-keys" id="jam-piano-keys"></div>
+        </div>
+    </div>
+
+    <!-- Jam Session: Drums -->
+    <div id="jam-drums" class="page">
+        <div class="drums-container">
+            <div class="controls-bar">
+                <div class="controls-left">
+                    <button class="back-btn" onclick="exitJamSession()">
+                        <span class="back-arrow">←</span>
+                        <span>Leave Jam</span>
+                    </button>
+                    <div class="instrument-indicator">
+                        <div class="indicator-animation drums-indicator"></div>
+                        <span class="indicator-text">Jam - Drums</span>
+                    </div>
+                </div>
+                <div class="controls-center">
+                    <span class="jam-room-badge" id="jam-drums-room-badge"></span>
+                </div>
+            </div>
+            <div class="drums-content">
+                <div class="camera-container">
+                    <div class="camera-status" id="jam-drums-camera-status">
+                        <div class="status-dot"></div>
+                        <span>AR Studio Active</span>
+                    </div>
+                    <iframe id="jam-drums-ar-embed" src="http://localhost:8501/?mode=drums&embed=true" class="ar-embed-frame"
+                        frameborder="0" allow="camera; microphone" style="width: 100%; height: 400px; border-radius: 12px;"></iframe>
+                </div>
+            </div>
+            <div class="drum-pads" id="jam-drum-pads">
+                <div class="drum-pad bass1-drum" data-drum="bass1"><div class="drum-inner"></div><div class="drum-label">Bass 1</div></div>
+                <div class="drum-pad bass2-drum" data-drum="bass2"><div class="drum-inner"></div><div class="drum-label">Bass 2</div></div>
+                <div class="drum-pad snare-drum" data-drum="snare"><div class="drum-inner"></div><div class="drum-label">Snare</div></div>
+                <div class="drum-pad cymbal" data-drum="cymbal"><div class="drum-inner"></div><div class="drum-label">Cymbal</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cursor Trail Canvas -->
+    <canvas id="cursor-trail"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4/build/cjs/vexflow.js"></script>
+    <script src="sheet_renderer.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Override goToLanding to go to instruments page for this file
+        function goToLanding() {
+            showPage('instruments-page');
+        }
+
+        function goBackToLanding() {
+            showPage('instruments-page');
+        }
+    </script>
+</body>
+
+</html>
